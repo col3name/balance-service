@@ -1,0 +1,58 @@
+version: "3.9"
+services:
+  payment-app:
+    image: mikhailmi/payment-app:master
+    container_name: payment-app
+    hostname: payment-app
+    ports:
+      - 8000:8000
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    environment:
+      PORT: 8000
+      DATABASE_ADDRESS: "payment-postgres:5432"
+      DATABASE_NAME: payment
+      DATABASE_USER: payment
+      DATABASE_PASSWORD: 1234
+      DATABASE_CONNECTION_TIMEOUT: 500
+      DATABASE_MAX_CONNECTION: 100
+      CURRENCY_API_KEY: '89103730-9489-11ec-bd80-b16cd9bfc243'
+    networks:
+      - dev-network
+    depends_on:
+      - payment-postgres
+
+  payment-postgres:
+    image: postgres:13
+    hostname: payment-postgres
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    volumes:
+      - url-short-postgres-data:/var/lib/postgresql/data
+#      - ./data/migrations/001_create_urls_table.up.sql:/docker-entrypoint-initdb.d/create_tables.sql
+    environment:
+      POSTGRES_USER: payment
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: payment
+    networks:
+      - dev-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U payment -d payment" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 4G
+volumes:
+  url-short-postgres-data:
+
+networks:
+  dev-network:
+    driver: bridge

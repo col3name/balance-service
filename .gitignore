@@ -1,0 +1,6 @@
+node_modules/
+dist/
+bin/
+.idea/
+docker-compose.override.yml
+*.exe

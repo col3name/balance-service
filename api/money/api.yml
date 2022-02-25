@@ -1,0 +1,220 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Money money
+  description: Microservice for working with users' balance (crediting funds, debiting funds, transferring funds from user to user, as well as a method for obtaining a user's balance, a list of transactions).
+paths:
+  /api/v1/money/{accountId}:
+    get:
+      tags:
+        - balance
+      summary: Get user's current balance.By default, the balance is in rubles.
+      operationId: getBalance
+      parameters:
+        - in: query
+          name: currency
+          description: convert user's balance to currency
+          required: false
+          schema:
+            type: string
+            enum:
+              - rub
+              - usd
+              - eur
+        - name: "accountId"
+          in: "path"
+          description: "ID of account to return"
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: 'Success result'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  currency:
+                    type: string
+                  amount:
+                    type: integer
+                    format: int64
+        400:
+          description: 'Invalid id'
+        404:
+          description: 'Account not found'
+  /api/v1/money/{accountId}/transactions:
+    get:
+      tags:
+        - balance
+      summary: Get a list of transactions account transaction.
+      operationId: getTransactions
+      parameters:
+        - in: query
+          name: sort
+          description: sort by field (0|1) 0 - date, 1 - amount
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: order
+          description: order direction (asc|desc)
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: cursor
+          description: cursor
+          required: false
+          schema:
+            type: string
+        - name: "accountId"
+          in: "path"
+          description: "ID of account to return"
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: 'Success result'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cursor:
+                    type: object
+                    properties:
+                      prev:
+                        type: string
+                      next:
+                        type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+        400:
+          description: 'Invalid currency'
+        404:
+          description: 'Account not found'
+        500:
+          description: 'Api call limit reached'
+
+  /api/v1/money/transfer:
+    post:
+      tags:
+        - Transaction
+      summary: Transfer funds from account to account.
+      operationId: transferMoney
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                from:
+                  type: string
+                  format: uuid
+                to:
+                  type: string
+                  format: uuid
+                amount:
+                  type: integer
+                  format: int64
+                  minimum: 0
+              required:
+                - from
+                - to
+                - amount
+        required: true
+      responses:
+        204:
+          description: 'Success result'
+        400:
+          description: 'Returns when invalid request'
+        404:
+          description: 'Returns when the account is not exist or deleted'
+        422:
+          description: 'Returns when not enough money'
+        500:
+          description: 'Returns when pkg server error'
+
+  /api/v1/money:
+    post:
+      tags:
+        - Depit
+      summary: Debit or credit of funds from account
+      operationId: depitMoney
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                account:
+                  type: string
+                  format: uuid
+                amount:
+                  type: integer
+                  format: int64
+              required:
+                - account
+                - amount
+        required: true
+      responses:
+        204:
+          description: 'Success result'
+        400:
+          description: 'Returns when invalid request'
+        404:
+          description: 'Returns when the account is not exist or deleted'
+        422:
+          description: 'Returns when not enough money'
+        500:
+          description: 'Returns when pkg server error'
+components:
+  schemas:
+    Transaction:
+      type: object
+      required:
+        - id
+        - amount
+        - status
+        - type
+        - timestamp
+      properties:
+        id:
+          type: string
+          format: uuid
+        amount:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum:
+            - confirmed
+            - failed
+        timestamp:
+          type: string
+          format: date-time
+        description:
+          type: string
