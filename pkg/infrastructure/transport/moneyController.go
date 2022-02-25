@@ -188,15 +188,6 @@ func decodeGetTransactionListRequest(req *http.Request) (*domain.GetTransactionL
 		}
 		limit = l
 	}
-	//pageStr := query.Get("page")
-	//page := 1
-	//if len(pageStr) > 0 {
-	//    l, err := strconv.Atoi(pageStr)
-	//    if err != nil {
-	//        return nil, domain.ErrInvalidRequest
-	//    }
-	//    page = l
-	//}
 
 	getDto := domain.NewGetTransactionListRequest(idStr, cursor, sortField, sortDirection, limit)
 	if getDto == nil {

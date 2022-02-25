@@ -50,6 +50,18 @@ services:
         limits:
           cpus: '1'
           memory: 4G
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: swagger_ui_container
+    ports:
+      - "80:8080"
+    volumes:
+      - ./api/money:/usr/share/nginx/html/doc
+    environment:
+      API_URL: doc/api.yaml
+      URLS: "[{ url: \"doc/api.yml\", name: \"UserManagement\" },]"
+
 volumes:
   url-short-postgres-data:
 
