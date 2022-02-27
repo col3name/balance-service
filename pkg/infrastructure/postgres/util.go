@@ -1,8 +1,8 @@
 package postgres
 
 import (
+	"github.com/col3name/balance-transfer/pkg/domain"
 	"github.com/jackc/pgx"
-	"money-transfer/pkg/domain"
 	"strings"
 )
 

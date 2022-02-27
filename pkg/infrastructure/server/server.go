@@ -1,7 +1,7 @@
 package server
 
 import (
-	"money-transfer/pkg/app/log"
+	"github.com/col3name/balance-transfer/pkg/app/log"
 	"net/http"
 	"os"
 	"os/signal"

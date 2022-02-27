@@ -183,10 +183,8 @@ func (s *GetTransactionListRequest) SetCursor(cursor string) {
 }
 
 type Transaction struct {
-	Id     string
-	Amount int64
-	//From           string
-	//To             string
+	Id             string
+	Amount         int64
 	UpdatedAt      time.Time
 	Description    string
 	OtherAccountID string
@@ -206,21 +204,24 @@ type MoneyTransferRequest struct {
 	Description    string
 }
 
-func NewMoneyTransferRequest(idempotencyKey string, from string, to string, amount int64, description string) *MoneyTransferRequest {
+func NewMoneyTransferRequest(idempotencyKey string, from string, to string, amount int64, description string) (*MoneyTransferRequest, error) {
 	s := new(MoneyTransferRequest)
-	if amount <= 0 || !isValidUUID(from) || !isValidUUID(to) || from == to {
-		return nil
+	if amount <= 0 || !isValidUUID(from) || !isValidUUID(to) {
+		return nil, ErrInvalidRequest
+	}
+	if from == to {
+		return nil, ErrTransferMoneyToThemself
 	}
 	if len(idempotencyKey) > 0 {
 		if !isValidUUID(idempotencyKey) {
-			return nil
+			return nil, ErrInvalidIdempotencyKey
 		}
 		s.IdempotencyKey = idempotencyKey
 	} else {
 		gen := uuid.NewGen()
 		idemptKey, err := gen.NewV4()
 		if err != nil {
-			return nil
+			return nil, ErrInvalidRequest
 		}
 		s.IdempotencyKey = idemptKey.String()
 	}
@@ -228,7 +229,7 @@ func NewMoneyTransferRequest(idempotencyKey string, from string, to string, amou
 	s.From = from
 	s.To = to
 	s.Description = description
-	return s
+	return s, nil
 }
 
 type MoneyRequest struct {

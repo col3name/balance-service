@@ -2,9 +2,9 @@ package transport
 
 import (
 	"encoding/json"
+	"github.com/col3name/balance-transfer/pkg/domain"
 	"github.com/gorilla/mux"
 	"io/ioutil"
-	"money-transfer/pkg/domain"
 	"net/http"
 	"strconv"
 	"strings"
@@ -128,9 +128,9 @@ func decodeMoneyTransferRequest(req *http.Request) (*domain.MoneyTransferRequest
 		return nil, domain.ErrInvalidRequest
 	}
 
-	request := domain.NewMoneyTransferRequest(idempotencyKey, r.From, r.To, r.Amount, r.Description)
-	if request == nil {
-		return nil, domain.ErrInvalidRequest
+	request, err := domain.NewMoneyTransferRequest(idempotencyKey, r.From, r.To, r.Amount, r.Description)
+	if err != nil {
+		return nil, err
 	}
 	return request, nil
 }

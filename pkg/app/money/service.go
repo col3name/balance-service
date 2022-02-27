@@ -1,8 +1,8 @@
 package money
 
 import (
+	"github.com/col3name/balance-transfer/pkg/domain"
 	"github.com/gofrs/uuid"
-	"money-transfer/pkg/domain"
 )
 
 type Service struct {

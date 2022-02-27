@@ -2,9 +2,9 @@ package freecurrency
 
 import (
 	"crypto/tls"
+	"github.com/col3name/balance-transfer/pkg/domain"
 	"github.com/mailru/easyjson"
 	"io/ioutil"
-	"money-transfer/pkg/domain"
 	"net/http"
 )
 

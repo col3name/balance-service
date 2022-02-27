@@ -1,4 +1,4 @@
-module money-transfer
+module github.com/col3name/balance-transfer
 
 // +heroku goVersion go1.16
 go 1.16

@@ -2,10 +2,10 @@ package postgres
 
 import (
 	"fmt"
+	"github.com/col3name/balance-transfer/pkg/domain"
 	"github.com/jackc/pgx"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"money-transfer/pkg/domain"
 	"net"
 	"testing"
 	"time"

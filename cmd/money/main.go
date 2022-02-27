@@ -4,12 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/col3name/balance-transfer/pkg/infrastructure/logger"
+	"github.com/col3name/balance-transfer/pkg/infrastructure/router"
+	"github.com/col3name/balance-transfer/pkg/infrastructure/server"
 	"github.com/jackc/pgx"
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
-	"money-transfer/pkg/infrastructure/logger"
-	"money-transfer/pkg/infrastructure/router"
-	"money-transfer/pkg/infrastructure/server"
 	"net"
 	"net/http"
 	"os"
@@ -18,6 +18,7 @@ import (
 )
 
 func main() {
+	//TODO write test on postman
 	ok := flag.Bool("load", false, "is need load .env file")
 	flag.Parse()
 	loggerImpl := logger.New()

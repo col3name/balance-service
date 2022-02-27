@@ -5,6 +5,7 @@
 #### optional
 [golangci-lint](https://github.com/golangci/golangci-lint),
 [apache benchmark](https://httpd.apache.org/docs/2.4/programs/ab.html)
+[newman](https://www.npmjs.com/package/newman)
 
 setup data
 
@@ -16,9 +17,3 @@ make up
 
 server running on ```localhost:8000```
 swagger ui running on ``` localhost:80```
-
-Ограничения на количество запросов к api для получения курса валют.
-
-Поддерживаю конвертацию в EUR, USD
-
-Пагинация с помощью курсора

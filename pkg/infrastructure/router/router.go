@@ -3,15 +3,15 @@ package router
 import (
 	"errors"
 	"fmt"
+	"github.com/col3name/balance-transfer/pkg/app/currency"
+	"github.com/col3name/balance-transfer/pkg/app/money"
+	"github.com/col3name/balance-transfer/pkg/domain"
+	"github.com/col3name/balance-transfer/pkg/infrastructure/freecurrency"
+	"github.com/col3name/balance-transfer/pkg/infrastructure/postgres"
+	"github.com/col3name/balance-transfer/pkg/infrastructure/transport"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx"
 	log "github.com/sirupsen/logrus"
-	"money-transfer/pkg/app/currency"
-	"money-transfer/pkg/app/money"
-	"money-transfer/pkg/domain"
-	"money-transfer/pkg/infrastructure/freecurrency"
-	"money-transfer/pkg/infrastructure/postgres"
-	"money-transfer/pkg/infrastructure/transport"
 	"net/http"
 )
 

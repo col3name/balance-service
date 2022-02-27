@@ -2,12 +2,13 @@ package postgres
 
 import (
 	"fmt"
+	"github.com/col3name/balance-transfer/pkg/domain"
 	"github.com/gofrs/uuid"
 	"github.com/jackc/pgx"
 	log "github.com/sirupsen/logrus"
 	"math"
-	"money-transfer/pkg/domain"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -105,7 +106,7 @@ func (r *MoneyRepo) GetTransactionListRequest(dto *domain.GetTransactionListRequ
 	}
 	sql += `
 FROM (
-         SELECT id, description, datetimestamp, amount AS value, COALESCE(to_id, uuid_nil()) AS otherAccount, true AS isDebit `
+         SELECT id, datetimestamp, amount AS value, COALESCE(to_id, uuid_nil()) AS otherAccount, true AS isDebit `
 	if dto.SortField == domain.SortByAmount {
 		sql += `, abs(amount) AS amounts `
 	}
@@ -126,7 +127,7 @@ FROM (
 	}
 	sql += `
          UNION ALL
-         SELECT id, description, datetimestamp, amount AS value, COALESCE(from_id, uuid_nil()) AS otherAccount, false AS isDebit `
+         SELECT id, datetimestamp, amount AS value, COALESCE(from_id, uuid_nil()) AS otherAccount, false AS isDebit `
 	if dto.SortField == domain.SortByAmount {
 		sql += `, abs(amount) AS amounts `
 	}
@@ -145,11 +146,11 @@ FROM (
 		}
 	}
 
-	sql += r.getOrderBy(dto.SortField, sortDir, isNext) + `
+	sql += r.getOrderBy(dto.SortField, sortDir) + `
          LIMIT $` + strconv.Itoa(i) + `
      ) AS tmp
          JOIN financial_transaction ft ON tmp.id = ft.id
-` + r.getOrderBy(dto.SortField, dto.SortDirection, isNext) + `
+` + r.getOrderBy(dto.SortField, dto.SortDirection) + `
 LIMIT $` + strconv.Itoa(i) + `;`
 	data = append(data, dto.Limit)
 
@@ -304,8 +305,18 @@ VALUES ($4, $5, $1, $2, $3);
 	var data []interface{}
 	data = append(data, dto.Amount, dto.From, dto.To, dto.IdempotencyKey, dto.Description)
 	err := WithTransactionSQL(r.pool, sql, data)
+	if r.isNotEnoughMoneyErr(err) {
+		return domain.ErrNotEnoughMoney
+	}
 	fmt.Println(err)
 	return err
+}
+
+func (r *MoneyRepo) isNotEnoughMoneyErr(err error) bool {
+	if err != nil {
+		return strings.Contains(err.Error(), "new row for relation \"account\" violates check constraint \"account_balance_check\"")
+	}
+	return false
 }
 
 func (r *MoneyRepo) CreditOrDebitMoney(dto *domain.MoneyRequest) error {
@@ -317,7 +328,7 @@ func (r *MoneyRepo) CreditOrDebitMoney(dto *domain.MoneyRequest) error {
 FROM account
 WHERE id = $2;
 UPDATE account
-SET balance = balance - $1
+SET balance = balance + $1
 WHERE id = $2;
 INSERT INTO financial_transaction (id, description, amount, from_id)
 VALUES ($3, $4, $1, $2);
@@ -326,6 +337,9 @@ VALUES ($3, $4, $1, $2);
 	}
 
 	err := WithTransactionSQL(r.pool, sql, data)
+	if r.isNotEnoughMoneyErr(err) {
+		return domain.ErrNotEnoughMoney
+	}
 	fmt.Println(err)
 	return err
 }
@@ -352,7 +366,7 @@ func (r *MoneyRepo) getCompareChar(dir domain.SortDirection, next bool) string {
 	return " > "
 }
 
-func (r *MoneyRepo) getOrderBy(field domain.SortField, direction domain.SortDirection, isNext bool) string {
+func (r *MoneyRepo) getOrderBy(field domain.SortField, direction domain.SortDirection) string {
 	res := ` ORDER BY ` + r.getSortField(field)
 	if direction == domain.SortDesc {
 		res += " DESC "

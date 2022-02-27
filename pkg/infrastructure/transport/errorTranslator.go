@@ -2,7 +2,7 @@ package transport
 
 import (
 	"errors"
-	"money-transfer/pkg/domain"
+	"github.com/col3name/balance-transfer/pkg/domain"
 	"net/http"
 )
 
@@ -20,6 +20,12 @@ func TranslateError(err error) *Error {
 	} else if errorIs(err, domain.ErrNotSupportedCurrency) {
 		return NewError(http.StatusBadRequest, 104, err)
 	} else if errorIs(err, domain.ErrInvalidRequest) {
+		return NewError(http.StatusBadRequest, 104, err)
+	} else if errorIs(err, domain.ErrTransferMoneyToThemself) {
+		return NewError(http.StatusConflict, 104, err)
+	} else if errorIs(err, domain.ErrNotEnoughMoney) {
+		return NewError(http.StatusConflict, 104, err)
+	} else if errorIs(err, domain.ErrInvalidIdempotencyKey) {
 		return NewError(http.StatusBadRequest, 104, err)
 	} else if errorIs(err, domain.ErrDuplicateIdempotencyKey) {
 		return NewError(http.StatusOK, 104, err)
