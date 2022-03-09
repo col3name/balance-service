@@ -25,6 +25,8 @@ func TranslateError(err error) *Error {
 		return NewError(http.StatusConflict, 104, err)
 	} else if errorIs(err, domain.ErrNotEnoughMoney) {
 		return NewError(http.StatusConflict, 104, err)
+	} else if errorIs(err, domain.ErrAccountNotExist) {
+		return NewError(http.StatusNotFound, 104, err)
 	} else if errorIs(err, domain.ErrInvalidIdempotencyKey) {
 		return NewError(http.StatusBadRequest, 104, err)
 	} else if errorIs(err, domain.ErrDuplicateIdempotencyKey) {

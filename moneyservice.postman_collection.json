@@ -56,12 +56,11 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8000/api/v1/money/{{accountId}}",
+							"raw": "http://{{baseUrl}}/api/v1/money/{{accountId}}",
 							"protocol": "http",
 							"host": [
-								"localhost"
+								"{{baseUrl}}"
 							],
-							"port": "8000",
 							"path": [
 								"api",
 								"v1",
@@ -120,12 +119,11 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8000/api/v1/money/{{accountId}}?currency=USD",
+							"raw": "http://{{baseUrl}}/api/v1/money/{{accountId}}?currency=USD",
 							"protocol": "http",
 							"host": [
-								"localhost"
+								"{{baseUrl}}"
 							],
-							"port": "8000",
 							"path": [
 								"api",
 								"v1",
@@ -190,12 +188,11 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8000/api/v1/money/{{accountId}}?currency=EUR",
+							"raw": "http://{{baseUrl}}/api/v1/money/{{accountId}}?currency=EUR",
 							"protocol": "http",
 							"host": [
-								"localhost"
+								"{{baseUrl}}"
 							],
-							"port": "8000",
 							"path": [
 								"api",
 								"v1",
@@ -261,12 +258,11 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8000/api/v1/money/e3f4a717-de9c-4d42-8fa7-151f0268c525?currency=JPY",
+							"raw": "http://{{baseUrl}}/api/v1/money/e3f4a717-de9c-4d42-8fa7-151f0268c525?currency=JPY",
 							"protocol": "http",
 							"host": [
-								"localhost"
+								"{{baseUrl}}"
 							],
-							"port": "8000",
 							"path": [
 								"api",
 								"v1",
@@ -286,10 +282,681 @@
 			]
 		},
 		{
+			"name": "TransferMoney",
+			"item": [
+				{
+					"name": "Without Idempotency Key, From = To",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 409\", function () {\r",
+									"    pm.response.to.have.status(409);\r",
+									"});\r",
+									"var schema = {\r",
+									"  \"code\": {\r",
+									"    \"type\": \"int\"\r",
+									"  },\r",
+									"  \"message\": {\r",
+									"    \"type\": \"string\"\r",
+									"  },\r",
+									"  \"required\": [\"code\", \"message\"]\r",
+									"};\r",
+									"\r",
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test('Schema is valid', function() {\r",
+									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Data is valid\", function () {\r",
+									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
+									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
+									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
+									"    pm.expect(jsonData.code).to.eql(104);\r",
+									"    pm.expect(jsonData.message).to.eql(\"can't transfer money to themself\");\r",
+									"});\r",
+									"\r",
+									"var responseJSON = JSON.parse(responseBody)\r",
+									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
+									"\r",
+									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
+									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"amount\": 100,\r\n    \"from\": \"e3f4a717-de9c-4d42-8fa7-151f0268c525\",\r\n    \"to\": \"e3f4a717-de9c-4d42-8fa7-151f0268c525\",\r\n    \"description\": \"\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{baseUrl}}/api/v1/money/transfer",
+							"protocol": "http",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"money",
+								"transfer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "With Invalid Idempotency Key",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"});\r",
+									"var schema = {\r",
+									"  \"code\": {\r",
+									"    \"type\": \"int\"\r",
+									"  },\r",
+									"  \"message\": {\r",
+									"    \"type\": \"string\"\r",
+									"  },\r",
+									"  \"required\": [\"code\", \"message\"]\r",
+									"};\r",
+									"\r",
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test('Schema is valid', function() {\r",
+									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Data is valid\", function () {\r",
+									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
+									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
+									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
+									"    pm.expect(jsonData.code).to.eql(104);\r",
+									"    pm.expect(jsonData.message).to.eql(\"invalid idempotency key, must be uuid v4\");\r",
+									"});\r",
+									"\r",
+									"var responseJSON = JSON.parse(responseBody)\r",
+									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
+									"\r",
+									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
+									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Idempotency-Key",
+								"value": "e3f4a717-de9c-4d42-8fa7-151f0268c525asdfas",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"amount\": 1000,\r\n    \"from\": \"e3f4a717-de9c-4d42-8fa7-151f0268c525\",\r\n    \"to\": \"180e9704-fbfe-4d04-8327-2c9ebf755219\",\r\n    \"description\": \"\"\r\n}"
+						},
+						"url": {
+							"raw": "http://{{baseUrl}}/api/v1/money/transfer",
+							"protocol": "http",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"money",
+								"transfer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "With Valid Idempotency Key Not Enough money",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 409\", function () {\r",
+									"    pm.response.to.have.status(409);\r",
+									"});\r",
+									"var schema = {\r",
+									"  \"code\": {\r",
+									"    \"type\": \"int\"\r",
+									"  },\r",
+									"  \"message\": {\r",
+									"    \"type\": \"string\"\r",
+									"  },\r",
+									"  \"required\": [\"code\", \"message\"]\r",
+									"};\r",
+									"\r",
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test('Schema is valid', function() {\r",
+									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Data is valid\", function () {\r",
+									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
+									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
+									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
+									"    pm.expect(jsonData.code).to.eql(104);\r",
+									"    pm.expect(jsonData.message).to.eql(\"not enough money on account\");\r",
+									"});\r",
+									"\r",
+									"var responseJSON = JSON.parse(responseBody)\r",
+									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
+									"\r",
+									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
+									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Idempotency-Key",
+								"value": "{{$guid}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"amount\": 1000,\r\n    \"to\": \"973011a5-0bca-4d1e-8a48-f0552ea7b73e\",\r\n    \"from\": \"67f9ff8c-79ea-4f39-a86e-39fb1d9dfb92\",\r\n    \"description\": \"buy macbook pro 13 m1, ram 16gb, ssd, 512gb\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{baseUrl}}/api/v1/money/transfer",
+							"protocol": "http",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"money",
+								"transfer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "From = To",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 409\", function () {\r",
+									"    pm.response.to.have.status(409);\r",
+									"});\r",
+									"var schema = {\r",
+									"  \"code\": {\r",
+									"    \"type\": \"int\"\r",
+									"  },\r",
+									"  \"message\": {\r",
+									"    \"type\": \"string\"\r",
+									"  },\r",
+									"  \"required\": [\"code\", \"message\"]\r",
+									"};\r",
+									"\r",
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test('Schema is valid', function() {\r",
+									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Data is valid\", function () {\r",
+									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
+									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
+									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
+									"    pm.expect(jsonData.code).to.eql(104);\r",
+									"    pm.expect(jsonData.message).to.eql(\"can't transfer money to themself\");\r",
+									"});\r",
+									"\r",
+									"var responseJSON = JSON.parse(responseBody)\r",
+									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
+									"\r",
+									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
+									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set(\"transferAmount\", pm.variables.replaceIn('{{$randomInt}}'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"amount\": {{transferAmount}},\r\n    \"from\": \"e3f4a717-de9c-4d42-8fa7-151f0268c525\",\r\n    \"to\": \"e3f4a717-de9c-4d42-8fa7-151f0268c525\",\r\n    \"description\": \"\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{baseUrl}}/api/v1/money/transfer",
+							"protocol": "http",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"money",
+								"transfer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Not exist account",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {\r",
+									"    pm.response.to.have.status(404);\r",
+									"});\r",
+									"var schema = {\r",
+									"  \"code\": {\r",
+									"    \"type\": \"int\"\r",
+									"  },\r",
+									"  \"message\": {\r",
+									"    \"type\": \"string\"\r",
+									"  },\r",
+									"  \"required\": [\"code\", \"message\"]\r",
+									"};\r",
+									"\r",
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test('Schema is valid', function() {\r",
+									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Data is valid\", function () {\r",
+									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
+									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
+									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
+									"    pm.expect(jsonData.code).to.eql(104);\r",
+									"    pm.expect(jsonData.message).to.eql(\"account not exist\");\r",
+									"});\r",
+									"\r",
+									"var responseJSON = JSON.parse(responseBody)\r",
+									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
+									"\r",
+									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
+									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"amount\": 100,\r\n    \"from\": \"e3f4a717-de9c-4d42-8fa7-151f0268c525\",\r\n    \"to\": \"e3f4a717-de9c-4d42-8fa7-151f0268c122\",\r\n    \"description\": \"\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{baseUrl}}/api/v1/money/transfer",
+							"protocol": "http",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"money",
+								"transfer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Without Idempotency Key, From != To Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"amount\": 100,\r\n    \"from\": \"e3f4a717-de9c-4d42-8fa7-151f0268c525\",\r\n    \"to\": \"180e9704-fbfe-4d04-8327-2c9ebf755219\",\r\n    \"description\": \"\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{baseUrl}}/api/v1/money/transfer",
+							"protocol": "http",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"money",
+								"transfer"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Get Transaction History",
 			"item": [
 				{
-					"name": "Get transaction history",
+					"name": "Empty",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"var schema = {\r",
+									"    \"type\":\"object\",\r",
+									"    \"properties\": {\r",
+									"        \"Data\": {\r",
+									"            \"type\": \"array\",\r",
+									"            \"items\": {\r",
+									"                \"type\": \"object\",\r",
+									"                \"properties\": {\r",
+									"                    \"Id\": {\r",
+									"                        \"type\": \"string\"\r",
+									"                    },\r",
+									"                    \"Amount\": {\r",
+									"                        \"type\": \"number\"\r",
+									"                    },\r",
+									"                    \"UpdatedAt\": {\r",
+									"                        \"type\": \"string\"\r",
+									"                    },\r",
+									"                    \"Description\": {\r",
+									"                        \"type\": \"string\"\r",
+									"                    },\r",
+									"                    \"OtherAccountID\": {\r",
+									"                        \"type\": \"string\"\r",
+									"                    },\r",
+									"                },\r",
+									"                \"required\": [\"Id\", \"Amount\", \"UpdatedAt\", \"OtherAccountID\"]   \r",
+									"            }\r",
+									"        },\r",
+									"        \"Page\": {\r",
+									"            \"type\": \"object\",\r",
+									"            \"properties\": {\r",
+									"                \"Prev\": {\r",
+									"                    \"type\": \"string\"\r",
+									"                },\r",
+									"                \"Next\": {\r",
+									"                    \"type\": \"string\"\r",
+									"                },\r",
+									"                \"Current\": {\r",
+									"                    \"type\": \"number\"\r",
+									"                },\r",
+									"            },\r",
+									"            \"required\": [\"Prev\", \"Next\", \"Current\"]   \r",
+									"        },\r",
+									"        \"CountItem\": {\r",
+									"            \"type\": \"number\"\r",
+									"        },\r",
+									"        \"required\": [\"Data\", \"Page\", \"CountItem\"]\r",
+									"    }\r",
+									"};\r",
+									"\r",
+									"\r",
+									"var jsonData = pm.response.json();\r",
+									"pm.test(\"Response schema is valid\", function () {\r",
+									"    pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+									"});\r",
+									"\r",
+									"\r",
+									"pm.test(\"Data array is empty\", function () {\r",
+									"    pm.expect(jsonData.Data.length).to.eql(0);\r",
+									"});\r",
+									"\r",
+									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
+									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{baseUrl}}/api/v1/money/{{accountId}}/transactions",
+							"protocol": "http",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"money",
+								"{{accountId}}",
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid sort direction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"});\r",
+									"var schema = {\r",
+									"  \"code\": {\r",
+									"    \"type\": \"int\"\r",
+									"  },\r",
+									"  \"message\": {\r",
+									"    \"type\": \"string\"\r",
+									"  },\r",
+									"  \"required\": [\"code\", \"message\"]\r",
+									"};\r",
+									"\r",
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test('Schema is valid', function() {\r",
+									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Data is valid\", function () {\r",
+									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
+									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
+									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
+									"    pm.expect(jsonData.code).to.eql(104);\r",
+									"    pm.expect(jsonData.message).to.eql(\"unsupported sort direction\");\r",
+									"});\r",
+									"\r",
+									"var responseJSON = JSON.parse(responseBody)\r",
+									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
+									"\r",
+									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
+									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{baseUrl}}/api/v1/money/{{accountId}} /transactions?order=2",
+							"protocol": "http",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"money",
+								"{{accountId}} ",
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "order",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid sort field",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {\r",
+									"    pm.response.to.have.status(400);\r",
+									"});\r",
+									"var schema = {\r",
+									"  \"code\": {\r",
+									"    \"type\": \"int\"\r",
+									"  },\r",
+									"  \"message\": {\r",
+									"    \"type\": \"string\"\r",
+									"  },\r",
+									"  \"required\": [\"code\", \"message\"]\r",
+									"};\r",
+									"\r",
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test('Schema is valid', function() {\r",
+									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Data is valid\", function () {\r",
+									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
+									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
+									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
+									"    pm.expect(jsonData.code).to.eql(104);\r",
+									"    pm.expect(jsonData.message).to.eql(\"unsupported sort field\");\r",
+									"});\r",
+									"\r",
+									"var responseJSON = JSON.parse(responseBody)\r",
+									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
+									"\r",
+									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
+									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://{{baseUrl}}/api/v1/money/{{accountId}}/transactions?sort=2",
+							"protocol": "http",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"money",
+								"{{accountId}}",
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "sort",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get List Sort By Date",
 					"event": [
 						{
 							"listen": "test",
@@ -374,704 +1041,17 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8000/api/v1/money/{{accountId}}/transactions",
+							"raw": "http://{{baseUrl}}/api/v1/money/{{accountIdSecond}}/transactions",
 							"protocol": "http",
 							"host": [
-								"localhost"
+								"{{baseUrl}}"
 							],
-							"port": "8000",
 							"path": [
 								"api",
 								"v1",
 								"money",
-								"{{accountId}}",
+								"{{accountIdSecond}}",
 								"transactions"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get transaction history Invalid sort direction",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 400\", function () {\r",
-									"    pm.response.to.have.status(400);\r",
-									"});\r",
-									"var schema = {\r",
-									"  \"code\": {\r",
-									"    \"type\": \"int\"\r",
-									"  },\r",
-									"  \"message\": {\r",
-									"    \"type\": \"string\"\r",
-									"  },\r",
-									"  \"required\": [\"code\", \"message\"]\r",
-									"};\r",
-									"\r",
-									"var jsonData = pm.response.json();\r",
-									"\r",
-									"pm.test('Schema is valid', function() {\r",
-									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
-									"});\r",
-									"\r",
-									"pm.test(\"Data is valid\", function () {\r",
-									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
-									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
-									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
-									"    pm.expect(jsonData.code).to.eql(104);\r",
-									"    pm.expect(jsonData.message).to.eql(\"unsupported sort direction\");\r",
-									"});\r",
-									"\r",
-									"var responseJSON = JSON.parse(responseBody)\r",
-									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
-									"\r",
-									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
-									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:8000/api/v1/money/{{accountId}} /transactions?order=2",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"v1",
-								"money",
-								"{{accountId}} ",
-								"transactions"
-							],
-							"query": [
-								{
-									"key": "order",
-									"value": "2"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "With Cursor",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {\r",
-									"    pm.response.to.have.status(200);\r",
-									"});\r",
-									"\r",
-									"var schema = {\r",
-									"    \"type\":\"object\",\r",
-									"    \"properties\": {\r",
-									"        \"Data\": {\r",
-									"            \"type\": \"array\",\r",
-									"            \"items\": {\r",
-									"                \"type\": \"object\",\r",
-									"                \"properties\": {\r",
-									"                    \"Id\": {\r",
-									"                        \"type\": \"string\"\r",
-									"                    },\r",
-									"                    \"Amount\": {\r",
-									"                        \"type\": \"number\"\r",
-									"                    },\r",
-									"                    \"UpdatedAt\": {\r",
-									"                        \"type\": \"string\"\r",
-									"                    },\r",
-									"                    \"Description\": {\r",
-									"                        \"type\": \"string\"\r",
-									"                    },\r",
-									"                    \"OtherAccountID\": {\r",
-									"                        \"type\": \"string\"\r",
-									"                    },\r",
-									"                },\r",
-									"                \"required\": [\"Id\", \"Amount\", \"UpdatedAt\", \"OtherAccountID\"]   \r",
-									"            }\r",
-									"        },\r",
-									"        \"Page\": {\r",
-									"            \"type\": \"object\",\r",
-									"            \"properties\": {\r",
-									"                \"Prev\": {\r",
-									"                    \"type\": \"string\"\r",
-									"                },\r",
-									"                \"Next\": {\r",
-									"                    \"type\": \"string\"\r",
-									"                },\r",
-									"                \"Current\": {\r",
-									"                    \"type\": \"number\"\r",
-									"                },\r",
-									"            },\r",
-									"            \"required\": [\"Prev\", \"Next\", \"Current\"]   \r",
-									"        },\r",
-									"        \"CountItem\": {\r",
-									"            \"type\": \"number\"\r",
-									"        },\r",
-									"        \"required\": [\"Data\", \"Page\", \"CountItem\"]\r",
-									"    }\r",
-									"};\r",
-									"\r",
-									"var jsonData = pm.response.json();\r",
-									"pm.test(\"Response schema is valid\", function () {\r",
-									"    pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
-									"});\r",
-									"\r",
-									"pm.test(\"Data is valid\", function () {\r",
-									"    pm.expect(Object.keys(jsonData).length).to.eql(3);\r",
-									"    pm.expect(jsonData.Data.length > 0).to.eql(true);\r",
-									"});\r",
-									"\r",
-									"var responseJSON = JSON.parse(responseBody)\r",
-									"pm.collectionVariables.set(\"transactionId\", jsonData.Data[0].Id);\r",
-									"\r",
-									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
-									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:8000/api/v1/money/{{accountId}}/transactions?cursor={{transactionHistoryNextPage}}",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"v1",
-								"money",
-								"{{accountId}}",
-								"transactions"
-							],
-							"query": [
-								{
-									"key": "cursor",
-									"value": "{{transactionHistoryNextPage}}"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get transaction history Invalid sort field",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 400\", function () {\r",
-									"    pm.response.to.have.status(400);\r",
-									"});\r",
-									"var schema = {\r",
-									"  \"code\": {\r",
-									"    \"type\": \"int\"\r",
-									"  },\r",
-									"  \"message\": {\r",
-									"    \"type\": \"string\"\r",
-									"  },\r",
-									"  \"required\": [\"code\", \"message\"]\r",
-									"};\r",
-									"\r",
-									"var jsonData = pm.response.json();\r",
-									"\r",
-									"pm.test('Schema is valid', function() {\r",
-									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
-									"});\r",
-									"\r",
-									"pm.test(\"Data is valid\", function () {\r",
-									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
-									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
-									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
-									"    pm.expect(jsonData.code).to.eql(104);\r",
-									"    pm.expect(jsonData.message).to.eql(\"unsupported sort field\");\r",
-									"});\r",
-									"\r",
-									"var responseJSON = JSON.parse(responseBody)\r",
-									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
-									"\r",
-									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
-									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:8000/api/v1/money/{{accountId}}фы/transactions?sort=2",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"v1",
-								"money",
-								"{{accountId}} ",
-								"transactions"
-							],
-							"query": [
-								{
-									"key": "sort",
-									"value": "2"
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "TransferMoney",
-			"item": [
-				{
-					"name": "Without Idempotency Key, From = To",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 409\", function () {\r",
-									"    pm.response.to.have.status(409);\r",
-									"});\r",
-									"var schema = {\r",
-									"  \"code\": {\r",
-									"    \"type\": \"int\"\r",
-									"  },\r",
-									"  \"message\": {\r",
-									"    \"type\": \"string\"\r",
-									"  },\r",
-									"  \"required\": [\"code\", \"message\"]\r",
-									"};\r",
-									"\r",
-									"var jsonData = pm.response.json();\r",
-									"\r",
-									"pm.test('Schema is valid', function() {\r",
-									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
-									"});\r",
-									"\r",
-									"pm.test(\"Data is valid\", function () {\r",
-									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
-									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
-									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
-									"    pm.expect(jsonData.code).to.eql(104);\r",
-									"    pm.expect(jsonData.message).to.eql(\"can't transfer money to themself\");\r",
-									"});\r",
-									"\r",
-									"var responseJSON = JSON.parse(responseBody)\r",
-									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
-									"\r",
-									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
-									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"amount\": 100,\r\n    \"from\": \"e3f4a717-de9c-4d42-8fa7-151f0268c525\",\r\n    \"to\": \"e3f4a717-de9c-4d42-8fa7-151f0268c525\",\r\n    \"description\": \"\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:8000/api/v1/money/transfer",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"v1",
-								"money",
-								"transfer"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "With Invalid Idempotency Key",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 400\", function () {\r",
-									"    pm.response.to.have.status(400);\r",
-									"});\r",
-									"var schema = {\r",
-									"  \"code\": {\r",
-									"    \"type\": \"int\"\r",
-									"  },\r",
-									"  \"message\": {\r",
-									"    \"type\": \"string\"\r",
-									"  },\r",
-									"  \"required\": [\"code\", \"message\"]\r",
-									"};\r",
-									"\r",
-									"var jsonData = pm.response.json();\r",
-									"\r",
-									"pm.test('Schema is valid', function() {\r",
-									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
-									"});\r",
-									"\r",
-									"pm.test(\"Data is valid\", function () {\r",
-									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
-									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
-									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
-									"    pm.expect(jsonData.code).to.eql(104);\r",
-									"    pm.expect(jsonData.message).to.eql(\"invalid idempotency key, must be uuid v4\");\r",
-									"});\r",
-									"\r",
-									"var responseJSON = JSON.parse(responseBody)\r",
-									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
-									"\r",
-									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
-									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Idempotency-Key",
-								"value": "e3f4a717-de9c-4d42-8fa7-151f0268c525asdfas",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"amount\": 1000,\r\n    \"from\": \"e3f4a717-de9c-4d42-8fa7-151f0268c525\",\r\n    \"to\": \"180e9704-fbfe-4d04-8327-2c9ebf755219\",\r\n    \"description\": \"\"\r\n}"
-						},
-						"url": {
-							"raw": "http://localhost:8000/api/v1/money/transfer",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"v1",
-								"money",
-								"transfer"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "With Valid Idempotency Key Not Enough money",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 409\", function () {\r",
-									"    pm.response.to.have.status(409);\r",
-									"});\r",
-									"var schema = {\r",
-									"  \"code\": {\r",
-									"    \"type\": \"int\"\r",
-									"  },\r",
-									"  \"message\": {\r",
-									"    \"type\": \"string\"\r",
-									"  },\r",
-									"  \"required\": [\"code\", \"message\"]\r",
-									"};\r",
-									"\r",
-									"var jsonData = pm.response.json();\r",
-									"\r",
-									"pm.test('Schema is valid', function() {\r",
-									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
-									"});\r",
-									"\r",
-									"pm.test(\"Data is valid\", function () {\r",
-									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
-									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
-									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
-									"    pm.expect(jsonData.code).to.eql(104);\r",
-									"    pm.expect(jsonData.message).to.eql(\"not enough money on account\");\r",
-									"});\r",
-									"\r",
-									"var responseJSON = JSON.parse(responseBody)\r",
-									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
-									"\r",
-									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
-									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Idempotency-Key",
-								"value": "e3f4a717-de9c-4d42-8fa7-151f0268c525",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"amount\": 1000,\r\n    \"to\": \"973011a5-0bca-4d1e-8a48-f0552ea7b73e\",\r\n    \"from\": \"67f9ff8c-79ea-4f39-a86e-39fb1d9dfb92\",\r\n    \"description\": \"buy macbook pro 13 m1, ram 16gb, ssd, 512gb\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:8000/api/v1/money/transfer",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"v1",
-								"money",
-								"transfer"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Without Idempotency Key",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 409\", function () {\r",
-									"    pm.response.to.have.status(409);\r",
-									"});\r",
-									"var schema = {\r",
-									"  \"code\": {\r",
-									"    \"type\": \"int\"\r",
-									"  },\r",
-									"  \"message\": {\r",
-									"    \"type\": \"string\"\r",
-									"  },\r",
-									"  \"required\": [\"code\", \"message\"]\r",
-									"};\r",
-									"\r",
-									"var jsonData = pm.response.json();\r",
-									"\r",
-									"pm.test('Schema is valid', function() {\r",
-									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
-									"});\r",
-									"\r",
-									"pm.test(\"Data is valid\", function () {\r",
-									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
-									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
-									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
-									"    pm.expect(jsonData.code).to.eql(104);\r",
-									"    pm.expect(jsonData.message).to.eql(\"can't transfer money to themself\");\r",
-									"});\r",
-									"\r",
-									"var responseJSON = JSON.parse(responseBody)\r",
-									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
-									"\r",
-									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
-									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"amount\": 100,\r\n    \"from\": \"e3f4a717-de9c-4d42-8fa7-151f0268c525\",\r\n    \"to\": \"e3f4a717-de9c-4d42-8fa7-151f0268c525\",\r\n    \"description\": \"\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:8000/api/v1/money/transfer",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"v1",
-								"money",
-								"transfer"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Without Idempotency Key, From != To",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {\r",
-									"    pm.response.to.have.status(200);\r",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"amount\": 100,\r\n    \"from\": \"e3f4a717-de9c-4d42-8fa7-151f0268c525\",\r\n    \"to\": \"e3f4a717-de9c-4d42-8fa7-151f0268c122\",\r\n    \"description\": \"\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:8000/api/v1/money/transfer",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"v1",
-								"money",
-								"transfer"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "With Valid Idempotency Key Not Enough money Copy",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 409\", function () {\r",
-									"    pm.response.to.have.status(409);\r",
-									"});\r",
-									"var schema = {\r",
-									"  \"code\": {\r",
-									"    \"type\": \"int\"\r",
-									"  },\r",
-									"  \"message\": {\r",
-									"    \"type\": \"string\"\r",
-									"  },\r",
-									"  \"required\": [\"code\", \"message\"]\r",
-									"};\r",
-									"\r",
-									"var jsonData = pm.response.json();\r",
-									"\r",
-									"pm.test('Schema is valid', function() {\r",
-									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
-									"});\r",
-									"\r",
-									"pm.test(\"Data is valid\", function () {\r",
-									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
-									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
-									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
-									"    pm.expect(jsonData.code).to.eql(104);\r",
-									"    pm.expect(jsonData.message).to.eql(\"not enough money on account\");\r",
-									"});\r",
-									"\r",
-									"var responseJSON = JSON.parse(responseBody)\r",
-									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
-									"\r",
-									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
-									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Idempotency-Key",
-								"value": "e3f4a717-de9c-4d42-8fa7-151f0268c525",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"amount\": 1000,\r\n    \"from\": \"973011a5-0bca-4d1e-8a48-f0552ea7b73e\",\r\n    \"to\": \"67f9ff8c-79ea-4f39-a86e-39fb1d9dfb92\",\r\n    \"description\": \"buy macbook pro 13 m1, ram 16gb, ssd, 512gb\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "http://localhost:8000/api/v1/money/transfer",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8000",
-							"path": [
-								"api",
-								"v1",
-								"money",
-								"transfer"
 							]
 						}
 					},
@@ -1154,12 +1134,11 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8000/api/v1/money",
+							"raw": "http://{{baseUrl}}/api/v1/money",
 							"protocol": "http",
 							"host": [
-								"localhost"
+								"{{baseUrl}}"
 							],
-							"port": "8000",
 							"path": [
 								"api",
 								"v1",
@@ -1234,12 +1213,83 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8000/api/v1/money",
+							"raw": "http://{{baseUrl}}/api/v1/money",
 							"protocol": "http",
 							"host": [
-								"localhost"
+								"{{baseUrl}}"
 							],
-							"port": "8000",
+							"path": [
+								"api",
+								"v1",
+								"money"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Not exist account Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {\r",
+									"    pm.response.to.have.status(404);\r",
+									"});\r",
+									"var schema = {\r",
+									"  \"code\": {\r",
+									"    \"type\": \"int\"\r",
+									"  },\r",
+									"  \"message\": {\r",
+									"    \"type\": \"string\"\r",
+									"  },\r",
+									"  \"required\": [\"code\", \"message\"]\r",
+									"};\r",
+									"\r",
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test('Schema is valid', function() {\r",
+									"  pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Data is valid\", function () {\r",
+									"    pm.expect(Object.keys(jsonData).length).to.eql(2);\r",
+									"    pm.expect(typeof jsonData.code).to.eql(\"number\");\r",
+									"    pm.expect(typeof jsonData.message).to.eql(\"string\");\r",
+									"    pm.expect(jsonData.code).to.eql(104);\r",
+									"    pm.expect(jsonData.message).to.eql(\"account not exist\");\r",
+									"});\r",
+									"\r",
+									"var responseJSON = JSON.parse(responseBody)\r",
+									"pm.collectionVariables.set(\"id\", jsonData.id);\r",
+									"\r",
+									"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
+									"tests[\"[INFO] Response: \" + responseBody] = true;\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"amount\": -1000,\r\n    \"account\":  \"e3f4a717-de9c-4d42-8fa7-151f0268c122\",\r\n    \"description\": \"cash\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://{{baseUrl}}/api/v1/money",
+							"protocol": "http",
+							"host": [
+								"{{baseUrl}}"
+							],
 							"path": [
 								"api",
 								"v1",
@@ -1257,18 +1307,182 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8000/health",
+					"raw": "http://{{baseUrl}}/health",
 					"protocol": "http",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "8000",
 					"path": [
 						"health"
 					]
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Get List Sort By Amount",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"var schema = {\r",
+							"    \"type\":\"object\",\r",
+							"    \"properties\": {\r",
+							"        \"Data\": {\r",
+							"            \"type\": \"array\",\r",
+							"            \"items\": {\r",
+							"                \"type\": \"object\",\r",
+							"                \"properties\": {\r",
+							"                    \"Id\": {\r",
+							"                        \"type\": \"string\"\r",
+							"                    },\r",
+							"                    \"Amount\": {\r",
+							"                        \"type\": \"number\"\r",
+							"                    },\r",
+							"                    \"UpdatedAt\": {\r",
+							"                        \"type\": \"string\"\r",
+							"                    },\r",
+							"                    \"Description\": {\r",
+							"                        \"type\": \"string\"\r",
+							"                    },\r",
+							"                    \"OtherAccountID\": {\r",
+							"                        \"type\": \"string\"\r",
+							"                    },\r",
+							"                },\r",
+							"                \"required\": [\"Id\", \"Amount\", \"UpdatedAt\", \"OtherAccountID\"]   \r",
+							"            }\r",
+							"        },\r",
+							"        \"Page\": {\r",
+							"            \"type\": \"object\",\r",
+							"            \"properties\": {\r",
+							"                \"Prev\": {\r",
+							"                    \"type\": \"string\"\r",
+							"                },\r",
+							"                \"Next\": {\r",
+							"                    \"type\": \"string\"\r",
+							"                },\r",
+							"                \"Current\": {\r",
+							"                    \"type\": \"number\"\r",
+							"                },\r",
+							"            },\r",
+							"            \"required\": [\"Prev\", \"Next\", \"Current\"]   \r",
+							"        },\r",
+							"        \"CountItem\": {\r",
+							"            \"type\": \"number\"\r",
+							"        },\r",
+							"        \"required\": [\"Data\", \"Page\", \"CountItem\"]\r",
+							"    }\r",
+							"};\r",
+							"\r",
+							"var jsonData = pm.response.json();\r",
+							"pm.test(\"Response schema is valid\", function () {\r",
+							"    pm.expect(tv4.validate(jsonData, schema)).to.be.true;\r",
+							"});\r",
+							"\r",
+							"pm.collectionVariables.set(\"prevCursor\", jsonData.Page.Prev);\r",
+							"pm.collectionVariables.set(\"nextCursor\", jsonData.Page.Next);\r",
+							"pm.test(\"Data is valid\", function () {\r",
+							"    pm.expect(Object.keys(jsonData).length).to.eql(3);\r",
+							"    pm.expect(jsonData.Data.length > 0).to.eql(true);\r",
+							"});\r",
+							"\r",
+							"var responseJSON = JSON.parse(responseBody)\r",
+							"pm.collectionVariables.set(\"transactionId\", jsonData.Data[0].Id);\r",
+							"pm.collectionVariables.set(\"transactionHistoryNextPage\", jsonData.Page.Next);\r",
+							"\r",
+							"tests[\"[INFO] Request: \" + (('data' in request) ? request['data'] : '') ] = true;\r",
+							"tests[\"[INFO] Response: \" + responseBody] = true;\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{baseUrl}}/api/v1/money/973011a5-0bca-4d1e-8a48-f0552ea7b73e/transactions?sort=1&order=1&",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"money",
+						"973011a5-0bca-4d1e-8a48-f0552ea7b73e",
+						"transactions"
+					],
+					"query": [
+						{
+							"key": "sort",
+							"value": "1"
+						},
+						{
+							"key": "order",
+							"value": "1"
+						},
+						{
+							"key": "",
+							"value": null
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ready",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{baseUrl}}/ready",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"ready"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
 		}
 	],
 	"variable": [
@@ -1286,6 +1500,35 @@
 		},
 		{
 			"key": "transactionHistoryNextPage",
+			"value": ""
+		},
+		{
+			"key": "accountOne",
+			"value": "67f9ff8c-79ea-4f39-a86e-39fb1d9dfb92"
+		},
+		{
+			"key": "accountTwo",
+			"value": "973011a5-0bca-4d1e-8a48-f0552ea7b73e"
+		},
+		{
+			"key": "transferAmount",
+			"value": ""
+		},
+		{
+			"key": "baseUrl",
+			"value": "localhost:8000"
+		},
+		{
+			"key": "accountIdSecond",
+			"value": "180e9704-fbfe-4d04-8327-2c9ebf755219",
+			"type": "string"
+		},
+		{
+			"key": "prevCursor",
+			"value": ""
+		},
+		{
+			"key": "nextCursor",
 			"value": ""
 		}
 	]

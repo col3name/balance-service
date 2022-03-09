@@ -124,7 +124,6 @@ func TestGetTransactionList(t *testing.T) {
 			}
 			for _, item := range res.Data {
 				responseList = append(responseList, item.Description)
-				fmt.Println(item.Description)
 			}
 			if res.Page.Prev != "" {
 				req.SetCursor(res.Page.Prev)

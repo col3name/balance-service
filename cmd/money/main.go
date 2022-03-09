@@ -18,7 +18,6 @@ import (
 )
 
 func main() {
-	//TODO write test on postman
 	ok := flag.Bool("load", false, "is need load .env file")
 	flag.Parse()
 	loggerImpl := logger.New()

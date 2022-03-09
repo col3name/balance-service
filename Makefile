@@ -5,8 +5,11 @@ all: clean bin/money test lint check-arch
 clean:
 	rm -rf bin/*
 
-bin/%:
-	GOARCH=amd64 GOOS=linux CGO_ENABLED=0 go build -o ./bin/$(notdir $@) ./cmd/$(notdir $@)
+download:
+	go mod download
+
+bin/%: download
+	set GOARCH=amd64 GOOS=linux CGO_ENABLED=0 go build -o ./bin/$(notdir $@) ./cmd/$(notdir $@)
 
 test:
 	go test ./...
@@ -30,4 +33,4 @@ bench2/%:
 	ab -p data.json -T application/json -c $(notdir $@) -n 2000 http://localhost:8000/api/v1/money/transfer
 
 newman:
-	newman run postman.json
+	newman run moneyservice.postman_collection.json

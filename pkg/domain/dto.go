@@ -111,10 +111,6 @@ func GetVal(cursor string) (string, int, bool, error) {
 	var val string
 	var page int
 	var isNext bool
-	//atoi, err := strconv.Atoi(split[0])
-	//if err != nil {
-	//    return -1, 0, false, ErrInvalid
-	//}
 	val = split[0]
 	atoi, err := strconv.Atoi(split[1])
 	if err != nil {
