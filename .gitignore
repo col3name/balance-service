@@ -4,3 +4,4 @@ bin/
 .idea/
 docker-compose.override.yml
 *.exe
+*.out
