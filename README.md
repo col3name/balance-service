@@ -1,8 +1,13 @@
-### Requirements
+# Service for working with user balance
+
+## TODO
+- Write test
+- Setup Github CI
+
+## Requirements
 [make](https://www.gnu.org/software/make/), [docker](https://www.docker.com/), [docker-compose](https://docs.docker.com/compose/install/)
 
-
-#### optional
+### optional
 [golangci-lint](https://github.com/golangci/golangci-lint),
 [apache benchmark](https://httpd.apache.org/docs/2.4/programs/ab.html),
 [newman](https://www.npmjs.com/package/newman),
@@ -19,20 +24,27 @@ make up
 server running on ```localhost:8000```
 swagger ui running on ``` localhost:80```
 
-## DB uml
+## Use cases 
+- Get the user's current balance.
+- Get the transaction history of the account.
+- Transfer funds from user to user.
+- Debit or credit of funds from account.
+- Converting balance to other currencies.
+
+## Database UML
 
 ![cursor](docs/img/db-uml.png)
 
+### Pagination when sorting by date is implemented via the cursor to optimize the OFFSET operation
 
-### Пагинация при сортировке по дате реализована через курсор для оптимизации OFFSET операции
-
-Пользователь редко смотрит всю историю транзакций при сортировке по какому-либо полу.
-Поэтому можно сохранить данные для пользователей и обновлять при фин. транзакциях.
+The user rarely looks at the entire transaction history when sorting by any gender.
+Therefore, it is possible to save data for users and update it during financial transactions.
 
 
 ![cursor](docs/img/pagination-compare.png)
 ![cursor](docs/img/pagination-compare-2.png)
 
-### Возможная архитектура для улучшения
+### Improvements in architecture to increase fault tolerance
+
 ![cursor](docs/img/sequence.png)
 ![cursor](docs/img/components.png)

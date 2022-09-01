@@ -8,7 +8,7 @@ paths:
     get:
       tags:
         - balance
-      summary: Get user's current balance.By default, the balance is in rubles.
+      summary: Get user's current balance. By default, the balance is in rubles.
       operationId: getBalance
       parameters:
         - in: query
