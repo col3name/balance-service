@@ -41,6 +41,9 @@ func (s *SDK) GetCurrenciesList(baseCurrency domain.Currency) ([]domain.Currency
 	}
 	defer resp.Body.Close()
 	rawBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 	someStruct := &CurrencyResponse{}
 	err = easyjson.Unmarshal(rawBytes, someStruct)
 	if err != nil {
