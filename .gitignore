@@ -5,3 +5,4 @@ bin/
 docker-compose.override.yml
 *.exe
 *.out
+*.sum
