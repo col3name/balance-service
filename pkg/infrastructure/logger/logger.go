@@ -2,9 +2,7 @@ package logger
 
 import (
 	"github.com/col3name/balance-transfer/pkg/app/log"
-
 	"github.com/sirupsen/logrus"
-
 	"os"
 )
 
