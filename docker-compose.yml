@@ -31,7 +31,6 @@ services:
       - 5432:5432
     volumes:
       - url-short-postgres-data:/var/lib/postgresql/data
-#      - ./data/migrations/001_create_urls_table.up.sql:/docker-entrypoint-initdb.d/create_tables.sql
     environment:
       POSTGRES_USER: payment
       POSTGRES_PASSWORD: 1234

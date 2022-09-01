@@ -12,12 +12,6 @@ CREATE INDEX IF NOT EXISTS index_name
 CREATE INDEX IF NOT EXISTS index_id_balance
     ON account (id, balance);
 
-CREATE INDEX IF NOT EXISTS index_date_ft
-    ON financial_transaction (datetimestamp);
-
-CREATE INDEX IF NOT EXISTS index_amount_ft
-    ON financial_transaction (amount);
-
 CREATE TABLE IF NOT EXISTS financial_transaction
 (
     id            UUID UNIQUE PRIMARY KEY,
@@ -27,3 +21,9 @@ CREATE TABLE IF NOT EXISTS financial_transaction
     to_id         UUID REFERENCES account (id) DEFAULT NULL,
     amount        BIGINT
 );
+
+CREATE INDEX IF NOT EXISTS index_date_ft
+    ON financial_transaction (datetimestamp);
+
+CREATE INDEX IF NOT EXISTS index_amount_ft
+    ON financial_transaction (amount);

@@ -1,9 +1,11 @@
 package postgres
 
 import (
+	"context"
 	"github.com/col3name/balance-transfer/pkg/domain"
 	"github.com/gofrs/uuid"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"math"
 	"strconv"
 	"strings"
@@ -11,17 +13,17 @@ import (
 )
 
 type MoneyRepo struct {
-	pool *pgx.ConnPool
+	pool *pgxpool.Pool
 }
 
-func NewMoneyRepo(pool *pgx.ConnPool) *MoneyRepo {
+func NewMoneyRepo(pool *pgxpool.Pool) *MoneyRepo {
 	r := new(MoneyRepo)
 	r.pool = pool
 	return r
 }
 
 func (r *MoneyRepo) GetBalance(accountId uuid.UUID) (int64, error) {
-	rows, err := r.pool.Query("SELECT balance FROM account WHERE id = $1", accountId)
+	rows, err := r.pool.Query(context.Background(), "SELECT balance FROM account WHERE id = $1", accountId)
 	if err != nil {
 		return 0, domain.ErrNotFound
 	}
@@ -80,7 +82,7 @@ func (r *MoneyRepo) GetTransactionListRequest(dto *domain.GetTransactionListRequ
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.pool.Query(sql, data...)
+	rows, err := r.pool.Query(context.Background(), sql, data...)
 	if err != nil {
 		return nil, err
 	}
@@ -99,10 +101,8 @@ func (r *MoneyRepo) GetTransactionListRequest(dto *domain.GetTransactionListRequ
 		}
 		if item.OtherAccountID == "00000000-0000-0000-0000-000000000000" {
 			item.OtherAccountID = ""
-		} else {
-			if isDebit {
-				item.Amount = -item.Amount
-			}
+		} else if isDebit {
+			item.Amount = -item.Amount
 		}
 		result.Data = append(result.Data, item)
 	}
@@ -120,21 +120,23 @@ func (r *MoneyRepo) setupPage(dto *domain.GetTransactionListRequest, result doma
 	if countItemInPage > 0 {
 		var firstItem string
 		var lastItem string
-		if countItemInPage >= 1 {
-			if dto.SortField == domain.SortByDate {
-				firstItem, lastItem = r.getFirstLastItems(result.Data, countItemInPage)
-			}
+		if countItemInPage >= 1 && dto.SortField == domain.SortByDate {
+			firstItem, lastItem = r.getFirstLastItems(result.Data, countItemInPage)
 		}
 		page = r.initPage(dto, currentPage, result.CountItem, isNext, firstItem, lastItem)
 	}
+	page.Current = r.getCurrentPage(dto, isNext, currentPage)
+	return page
+}
+
+func (r *MoneyRepo) getCurrentPage(dto *domain.GetTransactionListRequest, isNext bool, currentPage int) int {
 	if !isNext && dto.SortField == domain.SortByDate {
 		currentPage--
 	}
 	if currentPage < 0 {
 		currentPage = 0
 	}
-	page.Current = currentPage
-	return page
+	return currentPage
 }
 
 func (r *MoneyRepo) getFirstLastItems(data []domain.Transaction, countItemInPage int) (string, string) {
@@ -146,12 +148,10 @@ func (r *MoneyRepo) initPage(dto *domain.GetTransactionListRequest, currentPage,
 	if (dto.SortField == domain.SortByDate && (len(dto.Cursor) == 0 || ((currentPage == 0 || currentPage == 1) && !isNext))) ||
 		dto.SortField == domain.SortByAmount && len(dto.Cursor) == 0 || currentPage < 1 {
 		page = domain.Page{Prev: ""}
+	} else if (!isNext && currentPage > 0) || (dto.SortField == domain.SortByAmount && currentPage > 0) {
+		page.SetPrev(firstItem, currentPage-1)
 	} else {
-		if (!isNext && currentPage > 0) || (dto.SortField == domain.SortByAmount && currentPage > 0) {
-			page.SetPrev(firstItem, currentPage-1)
-		} else {
-			page.SetPrev(firstItem, currentPage)
-		}
+		page.SetPrev(firstItem, currentPage)
 	}
 	maxPage := int(math.Round(float64(countItem) / float64(dto.Limit)))
 	j := currentPage
@@ -254,17 +254,20 @@ func (r *MoneyRepo) getSortField(field domain.SortField) string {
 	return ""
 }
 
-func (r *MoneyRepo) getCompareChar(dir domain.SortDirection, next bool) string {
-	if dir == domain.SortAsc {
+const NextCharacter = " > "
+const PreviousCharacter = " < "
+
+func (r *MoneyRepo) getCompareChar(direction domain.SortDirection, next bool) string {
+	if direction == domain.SortAsc {
 		if next {
-			return " > "
+			return NextCharacter
 		}
-		return " < "
+		return PreviousCharacter
 	}
 	if next {
-		return " < "
+		return PreviousCharacter
 	}
-	return " > "
+	return NextCharacter
 }
 
 func (r *MoneyRepo) getOrderBy(field domain.SortField, direction domain.SortDirection) string {
@@ -396,8 +399,8 @@ func (r *MoneyRepo) getCountAllTransaction(dto *domain.GetTransactionListRequest
 	data = append(data, dto.AccountId)
 	countItem, err := Query(r.pool, sql, data, func(rows *pgx.Rows) (interface{}, error) {
 		var countItem int
-		if rows.Next() {
-			err := rows.Scan(&countItem)
+		if !(*rows).Next() {
+			err := (*rows).Scan(&countItem)
 			if err != nil {
 				return 0, err
 			}

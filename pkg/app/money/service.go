@@ -24,11 +24,13 @@ func (s Service) GetBalance(dto *domain.GetBalanceDTO) (*domain.CurrencyReturn, 
 	}
 	targetCurrency := dto.GetCurrency()
 	result := domain.NewCurrencyReturn(float64(amount), 1)
-	if targetCurrency != domain.RUB {
-		result, err = s.currencyService.Translate(amount, domain.RUB, targetCurrency)
-		if err != nil {
-			return nil, domain.ErrFailedConvert
-		}
+	if targetCurrency == domain.RUB {
+		return result, nil
+	}
+
+	result, err = s.currencyService.Translate(amount, domain.RUB, targetCurrency)
+	if err != nil {
+		return nil, domain.ErrFailedConvert
 	}
 	return result, nil
 }
@@ -72,12 +74,6 @@ func (s Service) getTransactionId(idempotencyKey string) (uuid.UUID, error) {
 			return uuid.UUID{}, err
 		}
 		idempotencyKey = transactionId.String()
-	} else {
-		fromString, err := uuid.FromString(idempotencyKey)
-		if err != nil {
-			return uuid.UUID{}, err
-		}
-		transactionId = fromString
 	}
-	return transactionId, nil
+	return uuid.FromString(idempotencyKey)
 }

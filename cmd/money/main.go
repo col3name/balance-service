@@ -7,10 +7,8 @@ import (
 	"github.com/col3name/balance-transfer/pkg/infrastructure/logger"
 	"github.com/col3name/balance-transfer/pkg/infrastructure/router"
 	"github.com/col3name/balance-transfer/pkg/infrastructure/server"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
-	"github.com/pkg/errors"
-	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -18,9 +16,10 @@ import (
 )
 
 func main() {
+	loggerImpl := logger.New()
+
 	ok := flag.Bool("load", false, "is need load .env file")
 	flag.Parse()
-	loggerImpl := logger.New()
 	if *ok {
 		err := godotenv.Load()
 		if err != nil {
@@ -31,15 +30,10 @@ func main() {
 	if err != nil {
 		loggerImpl.Fatal(err)
 	}
-
-	connector, err := getConnector(conf)
-
-	if err != nil {
-		loggerImpl.Fatal(err.Error())
-	}
-	pool, err := newConnectionPool(connector)
+	pool, err := newConnectionPool(conf)
 
 	if err != nil {
+		fmt.Println(err)
 		loggerImpl.Fatal(err.Error())
 	}
 	handler, err := initHandlers(pool, conf.CurrencyApiKey, 128)
@@ -60,7 +54,7 @@ func main() {
 	}
 }
 
-func initHandlers(connPool *pgx.ConnPool, currencyApiKey string, countConnection int) (http.Handler, error) {
+func initHandlers(connPool *pgxpool.Pool, currencyApiKey string, countConnection int) (http.Handler, error) {
 	return router.Router(connPool, currencyApiKey, countConnection)
 }
 
@@ -121,25 +115,7 @@ func ParseConfig() (*Config, error) {
 	}, nil
 }
 
-func getConnector(config *Config) (pgx.ConnPoolConfig, error) {
-	databaseUri := "postgres://" + config.DbUser + ":" + config.DbPassword + "@" + config.DbAddress + "/" + config.DbName
-	pgxConnConfig, err := pgx.ParseURI(databaseUri)
-	if err != nil {
-		return pgx.ConnPoolConfig{}, errors.Wrap(err, "failed to parse database URI from environment variable")
-	}
-	pgxConnConfig.Dial = (&net.Dialer{Timeout: 10 * time.Second, KeepAlive: 5 * time.Minute}).Dial
-	pgxConnConfig.RuntimeParams = map[string]string{
-		"standard_conforming_strings": "on",
-	}
-	pgxConnConfig.PreferSimpleProtocol = true
-
-	return pgx.ConnPoolConfig{
-		ConnConfig:     pgxConnConfig,
-		MaxConnections: config.MaxConnections,
-		AcquireTimeout: time.Duration(config.AcquireTimeout) * time.Second,
-	}, nil
-}
-
-func newConnectionPool(config pgx.ConnPoolConfig) (*pgx.ConnPool, error) {
-	return pgx.NewConnPool(config)
+func newConnectionPool(config *Config) (*pgxpool.Pool, error) {
+	databaseUrl := "postgres://" + config.DbUser + ":" + config.DbPassword + "@" + config.DbAddress + "/" + config.DbName
+	return pgxpool.Connect(context.Background(), databaseUrl)
 }

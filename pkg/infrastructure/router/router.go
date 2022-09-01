@@ -10,14 +10,14 @@ import (
 	"github.com/col3name/balance-transfer/pkg/infrastructure/postgres"
 	"github.com/col3name/balance-transfer/pkg/infrastructure/transport"
 	"github.com/gorilla/mux"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4/pgxpool"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
 var ErrFailedInitRouter = errors.New("failed init router")
 
-func Router(pool *pgx.ConnPool, freeCurrencyApiKey string, maxIdleConnection int) (http.Handler, error) {
+func Router(pool *pgxpool.Pool, freeCurrencyApiKey string, maxIdleConnection int) (http.Handler, error) {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/health", healthCheckHandler).Methods(http.MethodGet)

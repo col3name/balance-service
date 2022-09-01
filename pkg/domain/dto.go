@@ -44,22 +44,6 @@ func (s *GetBalanceDTO) GetCurrency() Currency {
 	return s.currency
 }
 
-type GetBalanceReturnDTO struct {
-	Amount         float64
-	Currency       Currency
-	ConversionRate float64
-}
-
-func NewGetBalanceReturn(amount float64, currency Currency) *GetBalanceReturnDTO {
-	if amount < 0 {
-		return nil
-	}
-	s := new(GetBalanceReturnDTO)
-	s.Amount = amount
-	s.Currency = currency
-	return s
-}
-
 type CurrencyReturn struct {
 	Amount           float64
 	ConversationRate float64
@@ -208,19 +192,17 @@ func NewMoneyTransferRequest(idempotencyKey string, from string, to string, amou
 	if from == to {
 		return nil, ErrTransferMoneyToThemself
 	}
-	if len(idempotencyKey) > 0 {
-		if !isValidUUID(idempotencyKey) {
-			return nil, ErrInvalidIdempotencyKey
-		}
-		s.IdempotencyKey = idempotencyKey
-	} else {
-		gen := uuid.NewGen()
-		idemptKey, err := gen.NewV4()
+	if len(idempotencyKey) > 0 && !isValidUUID(idempotencyKey) {
+		return nil, ErrInvalidIdempotencyKey
+	} else if len(idempotencyKey) == 0 {
+		newKey, err := uuid.NewGen().NewV4()
 		if err != nil {
 			return nil, ErrInvalidRequest
 		}
-		s.IdempotencyKey = idemptKey.String()
+		idempotencyKey = newKey.String()
 	}
+
+	s.IdempotencyKey = idempotencyKey
 	s.Amount = amount
 	s.From = from
 	s.To = to

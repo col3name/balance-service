@@ -1,23 +1,25 @@
 package postgres
 
 import (
+	"context"
 	"github.com/col3name/balance-transfer/pkg/domain"
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"strings"
 )
 
-func WithTransactionSQL(connPool *pgx.ConnPool, sql string, data []interface{}) error {
-	tx, err := connPool.Begin()
+func WithTransactionSQL(connPool *pgxpool.Pool, sql string, data []interface{}) error {
+	tx, err := connPool.Begin(context.Background())
 	if err != nil {
 		if tx != nil {
-			return tx.Rollback()
+			return tx.Rollback(context.Background())
 		}
 		return err
 	}
-	_, err = tx.Exec(sql, data...)
+	_, err = tx.Exec(context.Background(), sql, data...)
 	if err != nil {
 		if tx != nil {
-			_ = tx.Rollback()
+			_ = tx.Rollback(context.Background())
 			if strings.HasSuffix(err.Error(), "duplicate key value violates unique constraint \"transaction_pkey\"") {
 				return domain.ErrDuplicateIdempotencyKey
 			}
@@ -26,11 +28,11 @@ func WithTransactionSQL(connPool *pgx.ConnPool, sql string, data []interface{}) 
 		return err
 	}
 
-	return tx.Commit()
+	return tx.Commit(context.Background())
 }
 
-func Query(connPool *pgx.ConnPool, sql string, data []interface{}, fn func(rows *pgx.Rows) (interface{}, error)) (interface{}, error) {
-	rows, err := connPool.Query(sql, data...)
+func Query(connPool *pgxpool.Pool, sql string, data []interface{}, fn func(rows *pgx.Rows) (interface{}, error)) (interface{}, error) {
+	rows, err := connPool.Query(context.Background(), sql, data...)
 
 	if err != nil {
 		return nil, err
@@ -41,7 +43,7 @@ func Query(connPool *pgx.ConnPool, sql string, data []interface{}, fn func(rows 
 	if rows.Err() != nil {
 		return nil, rows.Err()
 	}
-	res, err := fn(rows)
+	res, err := fn(&rows)
 	if err != nil {
 		return nil, err
 	}

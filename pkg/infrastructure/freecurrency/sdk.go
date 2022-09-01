@@ -31,7 +31,7 @@ func NewSDK(apiKey string, maxIdleConnsPerHost int) *SDK {
 }
 
 func (s *SDK) GetCurrenciesList(baseCurrency domain.Currency) ([]domain.CurrencyItem, error) {
-	req, err := http.NewRequest(http.MethodGet, s.baseUrl+"apikey="+s.apiKey+"&base_currency="+string(baseCurrency), nil)
+	req, err := http.NewRequest(http.MethodGet, s.getApiUrl(baseCurrency), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -52,4 +52,8 @@ func (s *SDK) GetCurrenciesList(baseCurrency domain.Currency) ([]domain.Currency
 		*domain.NewCurrencyItem(domain.EUR, someStruct.Data.EUR))
 
 	return result, nil
+}
+
+func (s *SDK) getApiUrl(baseCurrency domain.Currency) string {
+	return s.baseUrl + "apikey=" + s.apiKey + "&base_currency=" + string(baseCurrency)
 }
