@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/col3name/balance-transfer/pkg/domain"
 	"github.com/gofrs/uuid"
-	"github.com/jackc/pgx/v4"
+	pgx "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"math"
 	"strconv"
