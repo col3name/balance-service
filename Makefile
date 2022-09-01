@@ -9,10 +9,12 @@ download:
 	go mod download
 
 bin/%: download
-	set GOARCH=amd64 GOOS=linux CGO_ENABLED=0 go build -o ./bin/$(notdir $@) ./cmd/$(notdir $@)
+	export GOARCH=amd64 GOOS=linux CGO_ENABLED=0 go build -o ./bin/$(notdir $@) ./cmd/$(notdir $@)
 
 test:
 	go test ./...
+
+build: bin/money
 
 cover:
 	go test -coverprofile=coverage.out ./...
