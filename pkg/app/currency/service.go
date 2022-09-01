@@ -40,12 +40,9 @@ func (s *Service) Translate(amount int64, from domain.Currency, to domain.Curren
 
 func (s *Service) updateIfNeeded(from domain.Currency) error {
 	if s.isNeedUpdate() {
-		err := s.updateCurrencies(from)
-		if err != nil {
-			return err
-		}
+		return nil
 	}
-	return nil
+	return s.updateCurrencies(from)
 }
 
 func (s *Service) updateCurrencies(from domain.Currency) error {
