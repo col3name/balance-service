@@ -397,18 +397,20 @@ func (r *MoneyRepo) getCountAllTransaction(dto *domain.GetTransactionListRequest
 	sql := r.getCountTransactionSQL()
 	data := make([]interface{}, 0)
 	data = append(data, dto.AccountId)
-	countItem, err := Query(r.pool, sql, data, func(rows *pgx.Rows) (interface{}, error) {
-		var countItem int
-		if !(*rows).Next() {
-			err := (*rows).Scan(&countItem)
-			if err != nil {
-				return 0, err
-			}
-		}
-		return countItem, nil
-	})
+	countItem, err := Query(r.pool, sql, data, r.getTransactionCountFn)
 	if err != nil {
 		return 0, err
 	}
 	return countItem.(int), nil
+}
+
+func (r *MoneyRepo) getTransactionCountFn(rows *pgx.Rows) (interface{}, error) {
+	var countItem int
+	if !(*rows).Next() {
+		err := (*rows).Scan(&countItem)
+		if err != nil {
+			return 0, err
+		}
+	}
+	return countItem, nil
 }
