@@ -10,4 +10,5 @@ RUN adduser -D app-executor
 USER app-executor
 WORKDIR /app
 COPY --from=builder /app/bin/money-service .
+COPY --from=builder /app/data/postgres/migrations/money migrations
 CMD ["./money-service"]

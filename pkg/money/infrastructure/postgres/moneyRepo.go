@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"context"
-	"github.com/col3name/balance-transfer/pkg/domain"
+	"github.com/col3name/balance-transfer/pkg/money/domain"
 	"github.com/gofrs/uuid"
 	pgx "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"

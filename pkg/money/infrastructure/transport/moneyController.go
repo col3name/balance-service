@@ -2,7 +2,7 @@ package transport
 
 import (
 	"encoding/json"
-	"github.com/col3name/balance-transfer/pkg/domain"
+	"github.com/col3name/balance-transfer/pkg/money/domain"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"

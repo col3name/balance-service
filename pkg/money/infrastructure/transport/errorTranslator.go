@@ -2,7 +2,7 @@ package transport
 
 import (
 	"errors"
-	"github.com/col3name/balance-transfer/pkg/domain"
+	"github.com/col3name/balance-transfer/pkg/money/domain"
 	"net/http"
 )
 

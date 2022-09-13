@@ -1,7 +1,7 @@
 package currency
 
 import (
-	"github.com/col3name/balance-transfer/pkg/domain"
+	"github.com/col3name/balance-transfer/pkg/money/domain"
 	"sync"
 	"time"
 )

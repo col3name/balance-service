@@ -18,6 +18,7 @@ services:
       DATABASE_CONNECTION_TIMEOUT: 500
       DATABASE_MAX_CONNECTION: 100
       CURRENCY_API_KEY: '89103730-9489-11ec-bd80-b16cd9bfc243'
+      MIGRATION_PATH: 'file://migrations'
     networks:
       - dev-network
     depends_on:

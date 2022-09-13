@@ -1,0 +1,4 @@
+START TRANSACTION;
+DROP TABLE IF EXISTS financial_transaction;
+DROP TABLE IF EXISTS account;
+COMMIT;

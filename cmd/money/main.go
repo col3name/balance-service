@@ -4,9 +4,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/col3name/balance-transfer/pkg/infrastructure/logger"
-	"github.com/col3name/balance-transfer/pkg/infrastructure/router"
-	"github.com/col3name/balance-transfer/pkg/infrastructure/server"
+	"github.com/col3name/balance-transfer/pkg/money/infrastructure/logger"
+	"github.com/col3name/balance-transfer/pkg/money/infrastructure/postgres"
+	"github.com/col3name/balance-transfer/pkg/money/infrastructure/router"
+	"github.com/col3name/balance-transfer/pkg/money/infrastructure/server"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
 	"net/http"
@@ -26,14 +27,14 @@ func main() {
 			loggerImpl.Fatal("Error loading .env file")
 		}
 	}
-	conf, err := ParseConfig()
+	conf, err := parseConfig()
 	if err != nil {
 		loggerImpl.Fatal(err)
 	}
-	pool, err := newConnectionPool(conf)
+	migration := postgres.NewMigration("", conf.MigrationsPath)
+	pool, err := postgres.GetReadyConnectionToDB(conf, migration)
 
 	if err != nil {
-		fmt.Println(err)
 		loggerImpl.Fatal(err.Error())
 	}
 	handler, err := initHandlers(pool, conf.CurrencyApiKey, 128)
@@ -58,17 +59,6 @@ func initHandlers(connPool *pgxpool.Pool, currencyApiKey string, countConnection
 	return router.Router(connPool, currencyApiKey, countConnection)
 }
 
-type Config struct {
-	Port           string
-	DbAddress      string
-	DbName         string
-	DbUser         string
-	DbPassword     string
-	MaxConnections int
-	AcquireTimeout int
-	CurrencyApiKey string
-}
-
 func parseEnvString(key string, err error) (string, error) {
 	if err != nil {
 		return "", err
@@ -88,7 +78,7 @@ func parseEnvInt(key string, err error) (int, error) {
 	return strconv.Atoi(s)
 }
 
-func ParseConfig() (*Config, error) {
+func parseConfig() (*postgres.Config, error) {
 	var err error
 	serveRestAddress, err := parseEnvString("PORT", err)
 	dbAddress, err := parseEnvString("DATABASE_ADDRESS", err)
@@ -98,24 +88,21 @@ func ParseConfig() (*Config, error) {
 	maxConnections, err := parseEnvInt("DATABASE_MAX_CONNECTION", err)
 	acquireTimeout, err := parseEnvInt("DATABASE_CONNECTION_TIMEOUT", err)
 	currencyApiKey, err := parseEnvString("CURRENCY_API_KEY", err)
+	migrationsPath, err := parseEnvString("MIGRATION_PATH", err)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &Config{
-		serveRestAddress,
-		dbAddress,
-		dbName,
-		dbUser,
-		dbPassword,
-		maxConnections,
-		acquireTimeout,
-		currencyApiKey,
+	return &postgres.Config{
+		Port:           serveRestAddress,
+		DbAddress:      dbAddress,
+		DbName:         dbName,
+		DbUser:         dbUser,
+		DbPassword:     dbPassword,
+		MaxConnections: maxConnections,
+		AcquireTimeout: acquireTimeout,
+		CurrencyApiKey: currencyApiKey,
+		MigrationsPath: migrationsPath,
 	}, nil
-}
-
-func newConnectionPool(config *Config) (*pgxpool.Pool, error) {
-	databaseUrl := "postgres://" + config.DbUser + ":" + config.DbPassword + "@" + config.DbAddress + "/" + config.DbName
-	return pgxpool.Connect(context.Background(), databaseUrl)
 }
