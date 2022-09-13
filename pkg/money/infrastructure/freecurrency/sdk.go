@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"github.com/col3name/balance-transfer/pkg/money/domain"
 	"github.com/mailru/easyjson"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -40,7 +40,8 @@ func (s *SDK) GetCurrenciesList(baseCurrency domain.Currency) ([]domain.Currency
 		return nil, domain.ErrApiLimit
 	}
 	defer resp.Body.Close()
-	rawBytes, err := ioutil.ReadAll(resp.Body)
+
+	rawBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

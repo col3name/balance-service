@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/col3name/balance-transfer/pkg/money/domain"
 	"github.com/gorilla/mux"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -99,12 +98,9 @@ func (c *MoneyController) CreditOrDebitMoney() func(http.ResponseWriter, *http.R
 
 func decodeMoneyRequest(req *http.Request) (*domain.MoneyRequest, error) {
 	idempotencyKey := req.Header.Get("Idempotency-Key")
-	rawData, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return nil, domain.ErrInvalidRequest
-	}
+
 	var r moneyRequest
-	err = json.Unmarshal(rawData, &r)
+	err := json.NewDecoder(req.Body).Decode(&r)
 	if err != nil {
 		return nil, domain.ErrInvalidRequest
 	}
@@ -118,21 +114,14 @@ func decodeMoneyRequest(req *http.Request) (*domain.MoneyRequest, error) {
 
 func decodeMoneyTransferRequest(req *http.Request) (*domain.MoneyTransferRequest, error) {
 	idempotencyKey := req.Header.Get("Idempotency-Key")
-	rawData, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return nil, domain.ErrInvalidRequest
-	}
+
 	var r moneyTransferRequest
-	err = json.Unmarshal(rawData, &r)
+	err := json.NewDecoder(req.Body).Decode(&r)
 	if err != nil {
 		return nil, domain.ErrInvalidRequest
 	}
 
-	request, err := domain.NewMoneyTransferRequest(idempotencyKey, r.From, r.To, r.Amount, r.Description)
-	if err != nil {
-		return nil, err
-	}
-	return request, nil
+	return domain.NewMoneyTransferRequest(idempotencyKey, r.From, r.To, r.Amount, r.Description)
 }
 
 func decodeGetTransactionListRequest(req *http.Request) (*domain.GetTransactionListRequest, error) {
