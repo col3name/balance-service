@@ -3,6 +3,7 @@ package router
 import (
 	"errors"
 	"fmt"
+	"github.com/col3name/balance-transfer/pkg/common/infrastructure/http/types"
 	"github.com/col3name/balance-transfer/pkg/money/app/currency"
 	"github.com/col3name/balance-transfer/pkg/money/app/money"
 	"github.com/col3name/balance-transfer/pkg/money/domain"
@@ -15,16 +16,43 @@ import (
 	"net/http"
 )
 
+const Version = "v1"
+
 var ErrFailedInitRouter = errors.New("failed init router")
 
 func Router(pool *pgxpool.Pool, freeCurrencyApiKey string, maxIdleConnection int) (http.Handler, error) {
+	moneyController, err := setupMoneyController(pool, freeCurrencyApiKey, maxIdleConnection)
+	if err != nil {
+		return nil, err
+	}
+
 	router := mux.NewRouter()
 
+	setupDefaultMethod(router)
+
+	apiV1Route := getApiVersionSubRoute(router, Version)
+	setupMoneyRoutes(apiV1Route, moneyController)
+
+	return logMiddleware(router), nil
+}
+
+func setupMoneyRoutes(apiV1Route *mux.Router, moneyController *handler.MoneyController) {
+	apiV1Route.HandleFunc("/money/{accountId}", moneyController.GetBalance()).Methods(http.MethodGet, http.MethodOptions)
+	apiV1Route.HandleFunc("/money/{accountId}/transactions", moneyController.GetTransactionList()).Methods(http.MethodGet, http.MethodOptions)
+	apiV1Route.HandleFunc("/money/transfer", moneyController.TransferMoney()).Methods(http.MethodPost)
+	apiV1Route.HandleFunc("/money", moneyController.CreditOrDebitMoney()).Methods(http.MethodPost)
+}
+
+func getApiVersionSubRoute(router *mux.Router, version string) *mux.Router {
+	return router.PathPrefix("/api/" + version).Subrouter()
+}
+
+func setupDefaultMethod(router *mux.Router) {
 	router.HandleFunc("/health", healthCheckHandler).Methods(http.MethodGet)
 	router.HandleFunc("/ready", readyCheckHandler).Methods(http.MethodGet)
+}
 
-	apiV1Route := router.PathPrefix("/api/v1").Subrouter()
-
+func setupMoneyController(pool *pgxpool.Pool, freeCurrencyApiKey string, maxIdleConnection int) (*handler.MoneyController, error) {
 	moneyRepo := postgres.NewMoneyRepo(pool)
 	sdk := freecurrency.NewAdapter(freeCurrencyApiKey, maxIdleConnection)
 	currencyService := currency.NewService(sdk, domain.RUB)
@@ -33,22 +61,17 @@ func Router(pool *pgxpool.Pool, freeCurrencyApiKey string, maxIdleConnection int
 	}
 	service := money.NewService(moneyRepo, currencyService)
 	moneyController := handler.NewMoneyController(*service)
-
-	apiV1Route.HandleFunc("/money/{accountId}", moneyController.GetBalance()).Methods(http.MethodGet, http.MethodOptions)
-	apiV1Route.HandleFunc("/money/{accountId}/transactions", moneyController.GetTransactionList()).Methods(http.MethodGet, http.MethodOptions)
-	apiV1Route.HandleFunc("/money/transfer", moneyController.TransferMoney()).Methods(http.MethodPost)
-	apiV1Route.HandleFunc("/money", moneyController.CreditOrDebitMoney()).Methods(http.MethodPost)
-	return logMiddleware(router), nil
+	return moneyController, nil
 }
 
 func healthCheckHandler(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(types.ContentType, types.ApplicationJson)
 	w.WriteHeader(http.StatusOK)
 	_, _ = fmt.Fprint(w, "{\"status\": \"OK\"}")
 }
 
 func readyCheckHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(types.ContentType, types.ApplicationJson)
 	w.WriteHeader(http.StatusOK)
 	_, _ = fmt.Fprintf(w, "{\"host\": \"%v\"}", r.Host)
 }
