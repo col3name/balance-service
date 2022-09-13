@@ -25,7 +25,8 @@ func (s *HttpServer) GetKillSignalChan() chan os.Signal {
 	return osKillSignalChan
 }
 
-func (s *HttpServer) WaitForKillSignal(killSignalChan <-chan os.Signal) {
+func (s *HttpServer) WaitForKillSignal() {
+	killSignalChan := s.GetKillSignalChan()
 	killSignal := <-killSignalChan
 	switch killSignal {
 	case os.Interrupt:

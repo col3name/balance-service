@@ -25,7 +25,7 @@ func main() {
 	if err != nil {
 		loggerImpl.Fatal(err)
 	}
-	pool, err := prepareDbPool(conf, err)
+	pool, err := prepareDbPool(conf)
 	if err != nil {
 		loggerImpl.Fatal(err.Error())
 	}
@@ -33,7 +33,7 @@ func main() {
 	if err != nil {
 		loggerImpl.Fatal(err.Error())
 	}
-	runHttpServer(loggerImpl, conf, handler, err)
+	runHttpServer(loggerImpl, conf, handler)
 }
 
 func loadDotEnvFileIfNeeded(loggerImpl log.Logger) {
@@ -47,8 +47,9 @@ func loadDotEnvFileIfNeeded(loggerImpl log.Logger) {
 	}
 }
 
-func prepareDbPool(conf *postgres.Config, err error) (*pgxpool.Pool, error) {
+func prepareDbPool(conf *postgres.Config) (*pgxpool.Pool, error) {
 	migration := postgres.NewMigration("", conf.MigrationsPath)
+
 	return postgres.GetReadyConnectionToDB(conf, migration)
 }
 
@@ -56,17 +57,15 @@ func initHandlers(connPool *pgxpool.Pool, currencyApiKey string, countConnection
 	return router.Router(connPool, currencyApiKey, countConnection)
 }
 
-func runHttpServer(loggerImpl log.Logger, conf *postgres.Config, handler http.Handler, err error) {
+func runHttpServer(loggerImpl log.Logger, conf *postgres.Config, handler http.Handler) {
 	loggerImpl.Info("Start at" + time.Now().String())
+	defer loggerImpl.Info("Stop at" + time.Now().String())
 
 	httpServer := server.HttpServer{Logger: loggerImpl}
 	srv := httpServer.StartServer(conf.Port, handler)
-	killSignalChan := httpServer.GetKillSignalChan()
-	httpServer.WaitForKillSignal(killSignalChan)
-	err = srv.Shutdown(context.Background())
+	httpServer.WaitForKillSignal()
 
-	loggerImpl.Info("Stop at" + time.Now().String())
-
+	err := srv.Shutdown(context.Background())
 	if err != nil {
 		loggerImpl.Error(err)
 		return
