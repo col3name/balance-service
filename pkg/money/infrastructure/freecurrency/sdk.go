@@ -45,15 +45,15 @@ func (s *SDK) GetCurrenciesList(baseCurrency domain.Currency) ([]domain.Currency
 	if err != nil {
 		return nil, err
 	}
-	someStruct := &CurrencyResponse{}
-	err = easyjson.Unmarshal(rawBytes, someStruct)
+	currencyResp := &CurrencyResponse{}
+	err = easyjson.Unmarshal(rawBytes, currencyResp)
 	if err != nil {
 		return nil, err
 	}
 	var result []domain.CurrencyItem
 	result = append(result,
-		*domain.NewCurrencyItem(domain.USD, someStruct.Data.USD),
-		*domain.NewCurrencyItem(domain.EUR, someStruct.Data.EUR))
+		*domain.NewCurrencyItem(domain.USD, currencyResp.Data.USD),
+		*domain.NewCurrencyItem(domain.EUR, currencyResp.Data.EUR))
 
 	return result, nil
 }

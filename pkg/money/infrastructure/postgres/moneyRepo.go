@@ -48,7 +48,7 @@ func (r *MoneyRepo) setupFieldCursor(dto *domain.GetTransactionListRequest) (tim
 	var err error
 	isNext := true
 	if len(dto.Cursor) > 0 {
-		fieldVal, currentPage, isNext, err = domain.GetVal(dto.Cursor)
+		fieldVal, currentPage, isNext, err = domain.GetValue(dto.Cursor)
 		if err != nil {
 			return time.Time{}, 0, false, domain.ErrInvalidCursor
 		}
@@ -381,7 +381,7 @@ FROM (
 	isNext := true
 
 	if len(dto.Cursor) > 0 {
-		_, currentPage, isNext, err = domain.GetVal(dto.Cursor)
+		_, currentPage, isNext, err = domain.GetValue(dto.Cursor)
 		if err != nil {
 			return "", nil, 0, false, domain.ErrInvalidCursor
 		}

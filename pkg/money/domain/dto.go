@@ -43,7 +43,7 @@ type GetBalanceDTO struct {
 }
 
 func NewGetBalanceRequest(accountId string, currency Currency) *GetBalanceDTO {
-	id, err := uuid.FromString(accountId)
+	id, err := getUUID(accountId)
 	if err != nil {
 		return nil
 	}
@@ -91,37 +91,38 @@ func (s *Page) GetPrev() (string, int, bool, error) {
 	if s.Prev == "" {
 		return "", 0, false, nil
 	}
-	return GetVal(s.Prev)
+	return GetValue(s.Prev)
 }
 
 func (s *Page) GetNext() (string, int, bool, error) {
 	if s.Prev == "" {
 		return "", 0, false, nil
 	}
-	return GetVal(s.Prev)
+	return GetValue(s.Prev)
 }
 
-func GetVal(cursor string) (string, int, bool, error) {
+func GetValue(cursor string) (string, int, bool, error) {
 	res, err := decode(cursor)
 	if err != nil {
 		return "", 0, false, err
 	}
-	split := strings.Split(string(res), "!")
+	const ValueSeparator = "!"
+	split := strings.Split(string(res), ValueSeparator)
 	if len(split) != 3 {
 		return "", 0, false, ErrInvalid
 	}
-	var val string
+	var value string
 	var page int
 	var isNext bool
-	val = split[0]
-	atoi, err := strconv.Atoi(split[1])
+	value = split[0]
+	number, err := strconv.Atoi(split[1])
 	if err != nil {
 		return "", 0, false, ErrInvalid
 	}
-	page = atoi
+	page = number
 	isNext = split[2] == "true"
 
-	return val, page, isNext, nil
+	return value, page, isNext, nil
 }
 
 func (s *Page) generateCursor(val string, page int, isNext bool) string {
@@ -163,7 +164,7 @@ type GetTransactionListRequest struct {
 }
 
 func NewGetTransactionListRequest(accountId, cursor string, field SortField, direction SortDirection, limit int) *GetTransactionListRequest {
-	id, err := uuid.FromString(accountId)
+	id, err := getUUID(accountId)
 	if err != nil || limit < 1 || limit > 30 {
 		return nil
 	}
@@ -176,6 +177,7 @@ func NewGetTransactionListRequest(accountId, cursor string, field SortField, dir
 		Limit:         limit,
 	}
 }
+
 func (s *GetTransactionListRequest) SetCursor(cursor string) {
 	s.Cursor = cursor
 }
@@ -204,20 +206,14 @@ type MoneyTransferRequest struct {
 
 func NewMoneyTransferRequest(idempotencyKey string, from string, to string, amount int64, description string) (*MoneyTransferRequest, error) {
 	s := new(MoneyTransferRequest)
-	if amount <= 0 || !isValidUUID(from) || !isValidUUID(to) {
-		return nil, ErrInvalidRequest
+	err := isValidData(amount, from, to)
+	if err != nil {
+		return nil, err
 	}
-	if from == to {
-		return nil, ErrTransferMoneyToThemself
-	}
-	if len(idempotencyKey) > 0 && !isValidUUID(idempotencyKey) {
-		return nil, ErrInvalidIdempotencyKey
-	} else if len(idempotencyKey) == 0 {
-		newKey, err := uuid.NewGen().NewV4()
-		if err != nil {
-			return nil, ErrInvalidRequest
-		}
-		idempotencyKey = newKey.String()
+
+	idempotencyKey, err = parseIdempotencyKey(idempotencyKey)
+	if err != nil {
+		return nil, err
 	}
 
 	s.IdempotencyKey = idempotencyKey
@@ -240,26 +236,46 @@ func NewMoneyRequest(idempotencyKey string, account string, amount int64, descri
 	if amount == 0 || !isValidUUID(account) {
 		return nil
 	}
-	if len(idempotencyKey) > 0 {
-		if !isValidUUID(idempotencyKey) {
-			return nil
-		}
-		s.IdempotencyKey = idempotencyKey
-	} else {
-		gen := uuid.NewGen()
-		idemptKey, err := gen.NewV4()
-		if err != nil {
-			return nil
-		}
-		s.IdempotencyKey = idemptKey.String()
+
+	idempotencyKey, err := parseIdempotencyKey(idempotencyKey)
+	if err != nil {
+		return nil
 	}
+	s.IdempotencyKey = idempotencyKey
 	s.Amount = amount
 	s.Account = account
 	s.Description = description
 	return s
 }
 
+func getUUID(accountId string) (uuid.UUID, error) {
+	return uuid.FromString(accountId)
+}
+
+func parseIdempotencyKey(idempotencyKey string) (string, error) {
+	if len(idempotencyKey) > 0 && !isValidUUID(idempotencyKey) {
+		return "", ErrInvalidIdempotencyKey
+	} else if len(idempotencyKey) == 0 {
+		newKey, err := uuid.NewGen().NewV4()
+		if err != nil {
+			return "", ErrInvalidRequest
+		}
+		idempotencyKey = newKey.String()
+	}
+	return idempotencyKey, nil
+}
+
+func isValidData(amount int64, from string, to string) error {
+	if amount <= 0 || !isValidUUID(from) || !isValidUUID(to) {
+		return ErrInvalidRequest
+	}
+	if from == to {
+		return ErrTransferMoneyToThemself
+	}
+	return nil
+}
+
 func isValidUUID(val string) bool {
-	_, err := uuid.FromString(val)
+	_, err := getUUID(val)
 	return err == nil
 }

@@ -14,9 +14,9 @@ type MoneyController struct {
 	moneyService domain.MoneyService
 }
 
-func NewMoneyController(service domain.MoneyService) *MoneyController {
+func NewMoneyController(moneyService domain.MoneyService) *MoneyController {
 	c := new(MoneyController)
-	c.moneyService = service
+	c.moneyService = moneyService
 	return c
 }
 
