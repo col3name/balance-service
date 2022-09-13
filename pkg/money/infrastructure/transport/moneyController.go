@@ -5,8 +5,8 @@ import (
 	"github.com/col3name/balance-transfer/pkg/money/domain"
 	"github.com/gorilla/mux"
 	"net/http"
+	"net/url"
 	"strconv"
-	"strings"
 )
 
 type MoneyController struct {
@@ -97,14 +97,13 @@ func (c *MoneyController) CreditOrDebitMoney() func(http.ResponseWriter, *http.R
 }
 
 func decodeMoneyRequest(req *http.Request) (*domain.MoneyRequest, error) {
-	idempotencyKey := req.Header.Get("Idempotency-Key")
 
 	var r moneyRequest
 	err := json.NewDecoder(req.Body).Decode(&r)
 	if err != nil {
 		return nil, domain.ErrInvalidRequest
 	}
-
+	idempotencyKey := getIdempotencyKey(req)
 	request := domain.NewMoneyRequest(idempotencyKey, r.Account, r.Amount, r.Description)
 	if request == nil {
 		return nil, domain.ErrInvalidRequest
@@ -113,48 +112,72 @@ func decodeMoneyRequest(req *http.Request) (*domain.MoneyRequest, error) {
 }
 
 func decodeMoneyTransferRequest(req *http.Request) (*domain.MoneyTransferRequest, error) {
-	idempotencyKey := req.Header.Get("Idempotency-Key")
 
 	var r moneyTransferRequest
 	err := json.NewDecoder(req.Body).Decode(&r)
 	if err != nil {
 		return nil, domain.ErrInvalidRequest
 	}
-
+	idempotencyKey := getIdempotencyKey(req)
 	return domain.NewMoneyTransferRequest(idempotencyKey, r.From, r.To, r.Amount, r.Description)
 }
 
+func getIdempotencyKey(req *http.Request) string {
+	return req.Header.Get("Idempotency-Key")
+}
+
+const FieldCurrency = "currency"
+const FieldSort = "sort"
+const FiledOrder = "order"
+const FieldLimit = "limit"
+const FieldCursor = "cursor"
+
 func decodeGetTransactionListRequest(req *http.Request) (*domain.GetTransactionListRequest, error) {
 	vars := mux.Vars(req)
-	idStr := vars["accountId"]
+	accountId := vars["accountId"]
 	query := req.URL.Query()
 
-	cursor := query.Get("cursor")
-	sort := query.Get("sort")
-	sortField := domain.SortByDate
-	if len(sort) > 0 {
-		sortFieldVal, err := strconv.Atoi(sort)
-		if err != nil {
-			return nil, domain.ErrUnsupportedSortField
-		}
-		switch sortFieldVal {
-		case int(domain.SortByAmount):
-			sortField = domain.SortByAmount
-		case int(domain.SortByDate):
-			sortField = domain.SortByDate
-		default:
-			if sortFieldVal > 1 {
-				return nil, domain.ErrUnsupportedSortField
-			}
-		}
+	cursor := query.Get(FieldCursor)
+	sortField, err := getSortFieldParameter(query)
+	if err != nil {
+		return nil, err
 	}
+	sortDirection, err := getSortDirectionParameter(query)
+	if err != nil {
+		return nil, err
+	}
+	var limit int
+	limit, err = getLimitParameter(query)
+	if err != nil {
+		return nil, err
+	}
+	getDto := domain.NewGetTransactionListRequest(accountId, cursor, sortField, sortDirection, limit)
+	if getDto == nil {
+		return nil, domain.ErrInvalidAccountId
+	}
+	return getDto, nil
+}
 
+func getLimitParameter(query url.Values) (int, error) {
+	limitStr := query.Get(FieldLimit)
+	limit := 2
+	if len(limitStr) > 0 {
+		l, err := strconv.Atoi(limitStr)
+		if err != nil {
+			return 0, domain.ErrInvalidRequest
+		}
+		limit = l
+	}
+	return limit, nil
+}
+
+func getSortDirectionParameter(query url.Values) (domain.SortDirection, error) {
+	order := query.Get(FiledOrder)
 	sortDirection := domain.SortDesc
-	order := query.Get("order")
 	if len(order) > 0 {
 		sortDirVal, err := strconv.Atoi(order)
 		if err != nil {
-			return nil, domain.ErrUnsupportedSortDirection
+			return 0, domain.ErrUnsupportedSortDirection
 		}
 		switch sortDirVal {
 		case int(domain.SortAsc):
@@ -163,26 +186,33 @@ func decodeGetTransactionListRequest(req *http.Request) (*domain.GetTransactionL
 			sortDirection = domain.SortDesc
 		default:
 			if sortDirVal > 1 {
-				return nil, domain.ErrUnsupportedSortDirection
+				return 0, domain.ErrUnsupportedSortDirection
 			}
 		}
 	}
+	return sortDirection, nil
+}
 
-	limitStr := query.Get("limit")
-	limit := 2
-	if len(limitStr) > 0 {
-		l, err := strconv.Atoi(limitStr)
+func getSortFieldParameter(query url.Values) (domain.SortField, error) {
+	sort := query.Get(FieldSort)
+	sortField := domain.SortByDate
+	if len(sort) > 0 {
+		sortFieldVal, err := strconv.Atoi(sort)
 		if err != nil {
-			return nil, domain.ErrInvalidRequest
+			return 0, domain.ErrUnsupportedSortField
 		}
-		limit = l
+		switch sortFieldVal {
+		case int(domain.SortByAmount):
+			sortField = domain.SortByAmount
+		case int(domain.SortByDate):
+			sortField = domain.SortByDate
+		default:
+			if sortFieldVal > 1 {
+				return 0, domain.ErrUnsupportedSortField
+			}
+		}
 	}
-
-	getDto := domain.NewGetTransactionListRequest(idStr, cursor, sortField, sortDirection, limit)
-	if getDto == nil {
-		return nil, domain.ErrInvalidAccountId
-	}
-	return getDto, nil
+	return sortField, nil
 }
 
 func decodeGetBalanceRequest(req *http.Request) (*domain.GetBalanceDTO, error) {
@@ -190,20 +220,9 @@ func decodeGetBalanceRequest(req *http.Request) (*domain.GetBalanceDTO, error) {
 	idStr := vars["accountId"]
 	query := req.URL.Query()
 
-	currencyParam := query.Get("currency")
-	var currency domain.Currency
-	switch strings.ToUpper(currencyParam) {
-	case string(domain.USD):
-		currency = domain.USD
-	case string(domain.EUR):
-		currency = domain.EUR
-	case string(domain.RUB):
-		currency = domain.RUB
-	default:
-		if len(currencyParam) > 0 && string(domain.RUB) != currencyParam {
-			return nil, domain.ErrNotSupportedCurrency
-		}
-		currency = domain.RUB
+	currency, err := domain.CurrencyFromString(query.Get(FieldCurrency))
+	if err != nil {
+		return nil, err
 	}
 
 	getBalanceDTO := domain.NewGetBalanceRequest(idStr, currency)

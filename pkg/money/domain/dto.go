@@ -19,6 +19,24 @@ const (
 	USD Currency = "USD"
 )
 
+func CurrencyFromString(value string) (Currency, error) {
+	var currency Currency
+	switch strings.ToUpper(value) {
+	case string(USD):
+		currency = USD
+	case string(EUR):
+		currency = EUR
+	case string(RUB):
+		currency = RUB
+	default:
+		if len(value) > 0 && string(RUB) != value {
+			return "", ErrNotSupportedCurrency
+		}
+		currency = RUB
+	}
+	return currency, nil
+}
+
 type GetBalanceDTO struct {
 	accountId uuid.UUID
 	currency  Currency
