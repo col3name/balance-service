@@ -4,10 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/col3name/balance-transfer/pkg/common/infrastructure/server"
+	"github.com/col3name/balance-transfer/pkg/money/app/log"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/logger"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/postgres"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/transport/router"
-	"github.com/col3name/balance-transfer/pkg/money/infrastructure/transport/server"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/joho/godotenv"
 	"net/http"
@@ -19,6 +20,23 @@ import (
 func main() {
 	loggerImpl := logger.New()
 
+	loadDotEnvFileIfNeeded(loggerImpl)
+	conf, err := parseConfig()
+	if err != nil {
+		loggerImpl.Fatal(err)
+	}
+	pool, err := prepareDbPool(conf, err)
+	if err != nil {
+		loggerImpl.Fatal(err.Error())
+	}
+	handler, err := initHandlers(pool, conf.CurrencyApiKey, 128)
+	if err != nil {
+		loggerImpl.Fatal(err.Error())
+	}
+	runHttpServer(loggerImpl, conf, handler, err)
+}
+
+func loadDotEnvFileIfNeeded(loggerImpl log.Logger) {
 	ok := flag.Bool("load", false, "is need load .env file")
 	flag.Parse()
 	if *ok {
@@ -27,36 +45,32 @@ func main() {
 			loggerImpl.Fatal("Error loading .env file")
 		}
 	}
-	conf, err := parseConfig()
-	if err != nil {
-		loggerImpl.Fatal(err)
-	}
-	migration := postgres.NewMigration("", conf.MigrationsPath)
-	pool, err := postgres.GetReadyConnectionToDB(conf, migration)
+}
 
-	if err != nil {
-		loggerImpl.Fatal(err.Error())
-	}
-	handler, err := initHandlers(pool, conf.CurrencyApiKey, 128)
-	if err != nil {
-		loggerImpl.Fatal(err.Error())
-	}
+func prepareDbPool(conf *postgres.Config, err error) (*pgxpool.Pool, error) {
+	migration := postgres.NewMigration("", conf.MigrationsPath)
+	return postgres.GetReadyConnectionToDB(conf, migration)
+}
+
+func initHandlers(connPool *pgxpool.Pool, currencyApiKey string, countConnection int) (http.Handler, error) {
+	return router.Router(connPool, currencyApiKey, countConnection)
+}
+
+func runHttpServer(loggerImpl log.Logger, conf *postgres.Config, handler http.Handler, err error) {
 	loggerImpl.Info("Start at" + time.Now().String())
+
 	httpServer := server.HttpServer{Logger: loggerImpl}
 	srv := httpServer.StartServer(conf.Port, handler)
 	killSignalChan := httpServer.GetKillSignalChan()
 	httpServer.WaitForKillSignal(killSignalChan)
-	err = srv.Shutdown(context.TODO())
+	err = srv.Shutdown(context.Background())
+
 	loggerImpl.Info("Stop at" + time.Now().String())
 
 	if err != nil {
 		loggerImpl.Error(err)
 		return
 	}
-}
-
-func initHandlers(connPool *pgxpool.Pool, currencyApiKey string, countConnection int) (http.Handler, error) {
-	return router.Router(connPool, currencyApiKey, countConnection)
 }
 
 func parseEnvString(key string, err error) (string, error) {
