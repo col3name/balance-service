@@ -1,4 +1,4 @@
-package transport
+package handler
 
 type responseWithoutData struct {
 	Code    uint32 `json:"code"`

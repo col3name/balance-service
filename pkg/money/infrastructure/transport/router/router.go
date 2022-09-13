@@ -8,7 +8,7 @@ import (
 	"github.com/col3name/balance-transfer/pkg/money/domain"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/adapter/freecurrency"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/postgres"
-	"github.com/col3name/balance-transfer/pkg/money/infrastructure/transport"
+	"github.com/col3name/balance-transfer/pkg/money/infrastructure/transport/handler"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4/pgxpool"
 	log "github.com/sirupsen/logrus"
@@ -32,7 +32,7 @@ func Router(pool *pgxpool.Pool, freeCurrencyApiKey string, maxIdleConnection int
 		return nil, ErrFailedInitRouter
 	}
 	service := money.NewService(moneyRepo, currencyService)
-	moneyController := transport.NewMoneyController(*service)
+	moneyController := handler.NewMoneyController(*service)
 
 	apiV1Route.HandleFunc("/money/{accountId}", moneyController.GetBalance()).Methods(http.MethodGet, http.MethodOptions)
 	apiV1Route.HandleFunc("/money/{accountId}/transactions", moneyController.GetTransactionList()).Methods(http.MethodGet, http.MethodOptions)
