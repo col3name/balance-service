@@ -6,7 +6,7 @@ import (
 	"github.com/col3name/balance-transfer/pkg/money/app/currency"
 	"github.com/col3name/balance-transfer/pkg/money/app/money"
 	"github.com/col3name/balance-transfer/pkg/money/domain"
-	"github.com/col3name/balance-transfer/pkg/money/infrastructure/freecurrency"
+	"github.com/col3name/balance-transfer/pkg/money/infrastructure/adapter/freecurrency"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/postgres"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/transport"
 	"github.com/gorilla/mux"
@@ -26,7 +26,7 @@ func Router(pool *pgxpool.Pool, freeCurrencyApiKey string, maxIdleConnection int
 	apiV1Route := router.PathPrefix("/api/v1").Subrouter()
 
 	moneyRepo := postgres.NewMoneyRepo(pool)
-	sdk := freecurrency.NewSDK(freeCurrencyApiKey, maxIdleConnection)
+	sdk := freecurrency.NewAdapter(freeCurrencyApiKey, maxIdleConnection)
 	currencyService := currency.NewService(sdk, domain.RUB)
 	if currencyService == nil {
 		return nil, ErrFailedInitRouter

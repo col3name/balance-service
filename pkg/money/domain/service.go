@@ -14,5 +14,5 @@ type CurrencyService interface {
 }
 
 type CurrencySDK interface {
-	GetCurrenciesList(baseCurrency Currency) ([]CurrencyItem, error)
+	GetCurrenciesList(baseCurrency Currency) ([]*CurrencyItem, error)
 }
