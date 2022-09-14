@@ -2,26 +2,22 @@ package main
 
 import (
 	"context"
-	"flag"
-	"fmt"
+	"github.com/col3name/balance-transfer/cmd/money/config"
 	"github.com/col3name/balance-transfer/pkg/common/infrastructure/server"
 	"github.com/col3name/balance-transfer/pkg/money/app/log"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/logger"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/postgres"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/transport/router"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/joho/godotenv"
 	"net/http"
-	"os"
-	"strconv"
 	"time"
 )
 
 func main() {
 	loggerImpl := logger.New()
 
-	loadDotEnvFileIfNeeded(loggerImpl)
-	conf, err := parseConfig()
+	config.LoadDotEnvFileIfNeeded(loggerImpl)
+	conf, err := config.ParseConfig()
 	if err != nil {
 		loggerImpl.Fatal(err)
 	}
@@ -34,17 +30,6 @@ func main() {
 		loggerImpl.Fatal(err.Error())
 	}
 	runHttpServer(loggerImpl, conf, handler)
-}
-
-func loadDotEnvFileIfNeeded(loggerImpl log.Logger) {
-	ok := flag.Bool("load", false, "is need load .env file")
-	flag.Parse()
-	if *ok {
-		err := godotenv.Load()
-		if err != nil {
-			loggerImpl.Fatal("Error loading .env file")
-		}
-	}
 }
 
 func prepareDbPool(conf *postgres.Config) (*pgxpool.Pool, error) {
@@ -70,52 +55,4 @@ func runHttpServer(loggerImpl log.Logger, conf *postgres.Config, handler http.Ha
 		loggerImpl.Error(err)
 		return
 	}
-}
-
-func parseEnvString(key string, err error) (string, error) {
-	if err != nil {
-		return "", err
-	}
-	str, ok := os.LookupEnv(key)
-	if !ok {
-		return "", fmt.Errorf("undefined environment variable %v", key)
-	}
-	return str, nil
-}
-
-func parseEnvInt(key string, err error) (int, error) {
-	s, err := parseEnvString(key, err)
-	if err != nil {
-		return 0, err
-	}
-	return strconv.Atoi(s)
-}
-
-func parseConfig() (*postgres.Config, error) {
-	var err error
-	serveRestAddress, err := parseEnvString("PORT", err)
-	dbAddress, err := parseEnvString("DATABASE_ADDRESS", err)
-	dbName, err := parseEnvString("DATABASE_NAME", err)
-	dbUser, err := parseEnvString("DATABASE_USER", err)
-	dbPassword, err := parseEnvString("DATABASE_PASSWORD", err)
-	maxConnections, err := parseEnvInt("DATABASE_MAX_CONNECTION", err)
-	acquireTimeout, err := parseEnvInt("DATABASE_CONNECTION_TIMEOUT", err)
-	currencyApiKey, err := parseEnvString("CURRENCY_API_KEY", err)
-	migrationsPath, err := parseEnvString("MIGRATION_PATH", err)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &postgres.Config{
-		Port:           serveRestAddress,
-		DbAddress:      dbAddress,
-		DbName:         dbName,
-		DbUser:         dbUser,
-		DbPassword:     dbPassword,
-		MaxConnections: maxConnections,
-		AcquireTimeout: acquireTimeout,
-		CurrencyApiKey: currencyApiKey,
-		MigrationsPath: migrationsPath,
-	}, nil
 }

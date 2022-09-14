@@ -4,7 +4,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/bin/money-service cmd/money/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/bin/money-service cmd/money/main.go
 FROM alpine:3.11.5
 RUN adduser -D app-executor
 USER app-executor
