@@ -7,13 +7,13 @@ import (
 )
 
 type Config struct {
+	MaxConnections int
+	AcquireTimeout int
 	Port           string
 	DbAddress      string
 	DbName         string
 	DbUser         string
 	DbPassword     string
-	MaxConnections int
-	AcquireTimeout int
 	CurrencyApiKey string
 	MigrationsPath string
 }

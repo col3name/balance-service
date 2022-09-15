@@ -7,17 +7,16 @@ import (
 )
 
 type Service struct {
-	currencySDK domain.CurrencySDK
 	updatedAt   time.Time
-	currencyMap map[domain.Currency]float64
 	mx          sync.RWMutex
+	currencySDK domain.CurrencySDK
+	currencyMap map[domain.Currency]float64
 }
 
 func NewService(sdk domain.CurrencySDK, from domain.Currency) *Service {
 	s := new(Service)
 	s.currencySDK = sdk
-	s.currencyMap = make(map[domain.Currency]float64, 2)
-	err := s.updateCurrencies(from)
+	err := s.initCurrencyMap(from)
 	if err != nil {
 		return nil
 	}
@@ -42,31 +41,30 @@ func (s *Service) updateIfNeeded(from domain.Currency) error {
 	if !s.isNeedUpdate() {
 		return nil
 	}
-	return s.updateCurrencies(from)
+	return s.initCurrencyMap(from)
 }
 
-func (s *Service) updateCurrencies(from domain.Currency) error {
+func (s *Service) initCurrencyMap(from domain.Currency) error {
+	s.currencyMap = make(map[domain.Currency]float64, 2)
+
 	currencyItems, err := s.currencySDK.GetCurrenciesList(from)
 	if err != nil {
 		return err
 	}
 
 	s.fillCurrencyMap(currencyItems)
+	s.updatedAt = time.Now()
 
 	return nil
 }
 
 func (s *Service) fillCurrencyMap(currencyItems []*domain.CurrencyItem) {
-	s.mx.Lock()
-	defer s.mx.Unlock()
-
 	for _, currencyItem := range currencyItems {
 		s.currencyMap[currencyItem.Currency] = currencyItem.Value
 	}
-
-	s.updatedAt = time.Now()
 }
 
 func (s *Service) isNeedUpdate() bool {
-	return time.Since(s.updatedAt).Minutes() <= 10
+	const CurrencyUpdatePeriod = 10
+	return time.Since(s.updatedAt).Minutes() <= CurrencyUpdatePeriod
 }
