@@ -2,6 +2,7 @@ package domain
 
 import (
 	str "github.com/col3name/balance-transfer/pkg/common/infrastructure/util/strings"
+	uuidUtil "github.com/col3name/balance-transfer/pkg/common/infrastructure/util/uuid"
 	"github.com/gofrs/uuid"
 	"math"
 	"strconv"
@@ -41,7 +42,7 @@ type GetBalanceDTO struct {
 }
 
 func NewGetBalanceRequest(accountId string, currency Currency) *GetBalanceDTO {
-	id, err := getUUID(accountId)
+	id, err := uuidUtil.FromString(accountId)
 	if err != nil {
 		return nil
 	}
@@ -275,13 +276,13 @@ func (c *Cursor) getSortDateBySortDirection(sortDirection SortDirection) time.Ti
 	return sortDate
 }
 
-func (c *Cursor) getSortDateByDate(timeString string) (time.Time, error) {
+func (c *Cursor) getSortDateByDate(times string) (time.Time, error) {
 	const baseCursorLayout = "2006-01-02 15:04:05.000000 +0000 UTC"
 	const secondCursorLayout = "2006-01-02 15:04:05.00000 +0000 UTC"
 
-	sortDate, err := time.Parse(baseCursorLayout, timeString)
+	sortDate, err := time.Parse(baseCursorLayout, times)
 	if err != nil {
-		sortDate, err = time.Parse(secondCursorLayout, timeString)
+		sortDate, err = time.Parse(secondCursorLayout, times)
 	}
 	return sortDate, err
 }
@@ -317,7 +318,7 @@ type GetTransactionListRequest struct {
 }
 
 func NewGetTransactionListRequest(accountId, cursor string, field SortField, direction SortDirection, limit int) *GetTransactionListRequest {
-	id, err := getUUID(accountId)
+	id, err := uuidUtil.FromString(accountId)
 	if err != nil || limit < 1 || limit > 30 {
 		return nil
 	}
@@ -369,7 +370,8 @@ type MoneyTransferRequest struct {
 
 func NewMoneyTransferRequest(idempotencyKey string, from string, to string, amount int64, description string) (*MoneyTransferRequest, error) {
 	s := new(MoneyTransferRequest)
-	err := isValidData(amount, from, to)
+
+	err := s.isValidTransferRequest(amount, from, to)
 	if err != nil {
 		return nil, err
 	}
@@ -386,6 +388,18 @@ func NewMoneyTransferRequest(idempotencyKey string, from string, to string, amou
 	s.Description = description
 	return s, nil
 }
+
+func (s *MoneyTransferRequest) isValidTransferRequest(amount int64, from string, to string) error {
+	if amount <= 0 || !uuidUtil.IsValid(from) || !uuidUtil.IsValid(to) {
+		return ErrInvalidRequest
+	}
+	if from == to {
+		return ErrTransferMoneyToThemself
+	}
+	return nil
+}
+
+type IdempotencyKey string
 
 type MoneyRequest struct {
 	Amount         int64
@@ -409,7 +423,7 @@ func GetTransactionId(idempotencyKey string) (uuid.UUID, error) {
 
 func NewMoneyRequest(idempotencyKey string, account string, amount int64, description string) *MoneyRequest {
 	s := new(MoneyRequest)
-	if amount == 0 || !isValidUUID(account) {
+	if amount == 0 || !uuidUtil.IsValid(account) {
 		return nil
 	}
 
@@ -424,12 +438,8 @@ func NewMoneyRequest(idempotencyKey string, account string, amount int64, descri
 	return s
 }
 
-func getUUID(accountId string) (uuid.UUID, error) {
-	return uuid.FromString(accountId)
-}
-
 func parseIdempotencyKey(idempotencyKey string) (string, error) {
-	if len(idempotencyKey) > 0 && !isValidUUID(idempotencyKey) {
+	if len(idempotencyKey) > 0 && !uuidUtil.IsValid(idempotencyKey) {
 		return "", ErrInvalidIdempotencyKey
 	} else if len(idempotencyKey) == 0 {
 		newKey, err := uuid.NewGen().NewV4()
@@ -439,19 +449,4 @@ func parseIdempotencyKey(idempotencyKey string) (string, error) {
 		idempotencyKey = newKey.String()
 	}
 	return idempotencyKey, nil
-}
-
-func isValidData(amount int64, from string, to string) error {
-	if amount <= 0 || !isValidUUID(from) || !isValidUUID(to) {
-		return ErrInvalidRequest
-	}
-	if from == to {
-		return ErrTransferMoneyToThemself
-	}
-	return nil
-}
-
-func isValidUUID(val string) bool {
-	_, err := getUUID(val)
-	return err == nil
 }
