@@ -17,7 +17,8 @@ bin/%:
 test:
 	go test ./...
 
-build: bin/money
+build:
+	go build -o money.exe cmd/money/main.go
 
 cover:
 	go test -coverprofile=coverage.out ./...
@@ -44,3 +45,5 @@ bench2/%:
 
 newman:
 	newman run moneyservice.postman_collection.json
+
+verify: build lint test check-arch

@@ -220,7 +220,7 @@ func decodeGetBalanceRequest(req *http.Request) (*domain.GetBalanceDTO, error) {
 	idStr := vars["accountId"]
 	query := req.URL.Query()
 
-	currency, err := domain.CurrencyFromString(query.Get(FieldCurrency))
+	currency, err := domain.NewCurrency(query.Get(FieldCurrency))
 	if err != nil {
 		return nil, err
 	}

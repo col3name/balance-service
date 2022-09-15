@@ -5,6 +5,7 @@ import "errors"
 var ErrNotFound = errors.New("not exist")
 var ErrApiLimit = errors.New("api limit reached")
 var ErrFailedConvert = errors.New("failed convert")
+var ErrInvalidAccountId = errors.New("invalid account id")
 var ErrNotSupportedCurrency = errors.New("not supported currency")
 var ErrInvalidRequest = errors.New("invalid request")
 var ErrInvalidIdempotencyKey = errors.New("invalid idempotency key, must be uuid v4")

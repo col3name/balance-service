@@ -57,12 +57,12 @@ package postgres
 //		t.Error(err)
 //		return
 //	}
-//	pool, err := newConnectionPool(connector)
+//	connPool, err := newConnectionPool(connector)
 //	if err != nil {
 //		t.Error(err)
 //		return
 //	}
-//	repo := NewMoneyRepo(pool)
+//	repo := NewMoneyRepo(connPool)
 //	var queue []domain.GetTransactionListRequest
 //	queue = append(queue, *request)
 //	var req domain.GetTransactionListRequest
@@ -79,13 +79,13 @@ package postgres
 //				t.Error(err)
 //				return
 //			}
-//			for _, item := range res.Data {
+//			for _, item := range res.Transactions {
 //				responseList = append(responseList, item.Description)
 //			}
 //			next := res.Page.Next
 //			if next != "" {
 //				req.SetCursor(next)
-//				fmt.Println("prev", res.Page.Prev)
+//				fmt.Println("prev", res.Page.Previous)
 //				queue = append(queue, req)
 //			}
 //			if i > 3 {
@@ -109,11 +109,11 @@ package postgres
 //				t.Error(err)
 //				return
 //			}
-//			for _, item := range res.Data {
+//			for _, item := range res.Transactions {
 //				responseList = append(responseList, item.Description)
 //			}
-//			if res.Page.Prev != "" {
-//				req.SetCursor(res.Page.Prev)
+//			if res.Page.Previous != "" {
+//				req.SetCursor(res.Page.Previous)
 //				queue = append(queue, req)
 //			}
 //			if i > 3 {
