@@ -1,12 +1,12 @@
 package config
 
 import (
+	"github.com/col3name/balance-transfer/pkg/common/app/logger"
 	"github.com/col3name/balance-transfer/pkg/common/infrastructure/util/env"
-	"github.com/col3name/balance-transfer/pkg/money/app/log"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/postgres"
 )
 
-func ParseConfig(logger log.Logger) (*postgres.Config, error) {
+func ParseConfig(logger logger.Logger) (*postgres.Config, error) {
 	env.LoadDotEnvFileIfNeeded(logger)
 
 	var err error

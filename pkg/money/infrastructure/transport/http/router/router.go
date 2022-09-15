@@ -3,12 +3,14 @@ package router
 import (
 	"errors"
 	"fmt"
+	"github.com/col3name/balance-transfer/pkg/common/app/logger"
 	"github.com/col3name/balance-transfer/pkg/common/infrastructure/http/types"
 	"github.com/col3name/balance-transfer/pkg/money/app/currency"
 	"github.com/col3name/balance-transfer/pkg/money/app/money"
 	"github.com/col3name/balance-transfer/pkg/money/domain"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/adapter/freecurrency"
-	"github.com/col3name/balance-transfer/pkg/money/infrastructure/postgres"
+	"github.com/col3name/balance-transfer/pkg/money/infrastructure/postgres/query"
+	"github.com/col3name/balance-transfer/pkg/money/infrastructure/postgres/repo"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/transport/http/handler"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -20,8 +22,8 @@ const Version = "v1"
 
 var ErrFailedInitRouter = errors.New("failed init router")
 
-func Router(pool *pgxpool.Pool, freeCurrencyApiKey string, maxIdleConnection int) (http.Handler, error) {
-	moneyController, err := setupMoneyController(pool, freeCurrencyApiKey, maxIdleConnection)
+func Router(pool *pgxpool.Pool, logger logger.Logger, freeCurrencyApiKey string, maxIdleConnection int) (http.Handler, error) {
+	moneyController, err := setupMoneyController(pool, logger, freeCurrencyApiKey, maxIdleConnection)
 	if err != nil {
 		return nil, err
 	}
@@ -52,14 +54,15 @@ func setupDefaultMethod(router *mux.Router) {
 	router.HandleFunc("/ready", readyCheckHandler).Methods(http.MethodGet)
 }
 
-func setupMoneyController(pool *pgxpool.Pool, freeCurrencyApiKey string, maxIdleConnection int) (*handler.MoneyController, error) {
-	moneyRepo := postgres.NewMoneyRepo(pool)
+func setupMoneyController(pool *pgxpool.Pool, logger logger.Logger, freeCurrencyApiKey string, maxIdleConnection int) (*handler.MoneyController, error) {
+	unitOfWork := repo.NewUnitOfWork(pool, logger)
+	moneyQuery := query.NewMoneyQueryService(pool)
 	sdk := freecurrency.NewAdapter(freeCurrencyApiKey, maxIdleConnection)
 	currencyService := currency.NewService(sdk, domain.RUB)
 	if currencyService == nil {
 		return nil, ErrFailedInitRouter
 	}
-	service := money.NewService(moneyRepo, currencyService)
+	service := money.NewService(unitOfWork, moneyQuery, currencyService)
 	moneyController := handler.NewMoneyController(*service)
 	return moneyController, nil
 }

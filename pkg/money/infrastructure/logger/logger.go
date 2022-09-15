@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"github.com/col3name/balance-transfer/pkg/money/app/log"
+	"github.com/col3name/balance-transfer/pkg/common/app/logger"
 	"github.com/sirupsen/logrus"
 	"os"
 )
@@ -20,11 +20,11 @@ type impl struct {
 	logger logrusLogger
 }
 
-func (i *impl) With(fields log.Fields) log.Logger {
+func (i *impl) With(fields logger.Fields) logger.Logger {
 	return fromLogrus(i.logger.WithFields(logrus.Fields(fields)))
 }
 
-func (i *impl) WithError(err error) log.Logger {
+func (i *impl) WithError(err error) logger.Logger {
 	return fromLogrus(i.logger.WithError(err))
 }
 
@@ -48,11 +48,11 @@ func (i *impl) Fatal(args ...interface{}) {
 	i.logger.Fatal(args)
 }
 
-func fromLogrus(l logrusLogger) log.Logger {
+func fromLogrus(l logrusLogger) logger.Logger {
 	return &impl{l}
 }
 
-func New() log.Logger {
+func New() logger.Logger {
 	logrusLogger := logrus.New()
 	logrusLogger.SetFormatter(&logrus.JSONFormatter{})
 	logrusLogger.SetOutput(os.Stdout)

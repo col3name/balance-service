@@ -289,6 +289,16 @@ func (c *Cursor) getSortDateByDate(times string) (time.Time, error) {
 
 type SortField int
 
+func (s SortField) ToString() string {
+	switch s {
+	case SortByDate:
+		return " datetimestamp "
+	case SortByAmount:
+		return " amounts "
+	}
+	return ""
+}
+
 const (
 	SortByDate SortField = iota
 	SortByAmount

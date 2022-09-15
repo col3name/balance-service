@@ -3,13 +3,13 @@ package env
 import (
 	"flag"
 	"fmt"
-	"github.com/col3name/balance-transfer/pkg/money/app/log"
+	"github.com/col3name/balance-transfer/pkg/common/app/logger"
 	"github.com/joho/godotenv"
 	"os"
 	"strconv"
 )
 
-func LoadDotEnvFileIfNeeded(loggerImpl log.Logger) {
+func LoadDotEnvFileIfNeeded(loggerImpl logger.Logger) {
 	ok := flag.Bool("load", false, "is need load .env file")
 	flag.Parse()
 	if *ok {

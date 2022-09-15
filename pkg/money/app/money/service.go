@@ -1,24 +1,27 @@
 package money
 
 import (
+	"github.com/col3name/balance-transfer/pkg/money/app/service"
 	"github.com/col3name/balance-transfer/pkg/money/domain"
 	"github.com/gofrs/uuid"
 )
 
 type Service struct {
-	repo            domain.MoneyRepo
+	query           domain.MoneyQueryService
+	unitOfWork      service.UnitOfWork
 	currencyService domain.CurrencyService
 }
 
-func NewService(repo domain.MoneyRepo, service domain.CurrencyService) *Service {
+func NewService(unitOfWork service.UnitOfWork, query domain.MoneyQueryService, service domain.CurrencyService) *Service {
 	s := new(Service)
-	s.repo = repo
+	s.query = query
+	s.unitOfWork = unitOfWork
 	s.currencyService = service
 	return s
 }
 
 func (s Service) GetBalance(dto *domain.GetBalanceDTO) (*domain.CurrencyReturn, error) {
-	amount, err := s.repo.GetBalance(dto.GetAccountId())
+	amount, err := s.query.GetBalance(dto.GetAccountId())
 	if err != nil {
 		return nil, domain.ErrNotFound
 	}
@@ -36,7 +39,7 @@ func (s Service) GetBalance(dto *domain.GetBalanceDTO) (*domain.CurrencyReturn, 
 }
 
 func (s Service) GetTransactionListRequest(dto *domain.GetTransactionListRequest) (*domain.GetTransactionListReturn, error) {
-	return s.repo.GetTransactionListRequest(dto)
+	return s.query.GetTransactionListRequest(dto)
 }
 
 func (s Service) TransferMoney(dto *domain.MoneyTransferRequest) (*uuid.UUID, error) {
@@ -45,7 +48,11 @@ func (s Service) TransferMoney(dto *domain.MoneyTransferRequest) (*uuid.UUID, er
 		return nil, err
 	}
 	dto.IdempotencyKey = transactionId.String()
-	err = s.repo.TransferMoney(dto)
+
+	err = s.unitOfWork.Execute(func(provider service.RepositoryProvider) error {
+		repo := provider.MoneyRepo()
+		return repo.TransferMoney(dto)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +65,10 @@ func (s Service) CreditOrDebitMoney(dto *domain.MoneyRequest) (*uuid.UUID, error
 		return nil, err
 	}
 	dto.IdempotencyKey = transactionId.String()
-	err = s.repo.CreditOrDebitMoney(dto)
+	err = s.unitOfWork.Execute(func(provider service.RepositoryProvider) error {
+		repo := provider.MoneyRepo()
+		return repo.CreditOrDebitMoney(dto)
+	})
 	if err != nil {
 		return nil, err
 	}

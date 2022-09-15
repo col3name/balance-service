@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/col3name/balance-transfer/pkg/money/app/log"
+	"github.com/col3name/balance-transfer/pkg/common/app/logger"
 	"net/http"
 	"os"
 	"os/signal"
@@ -9,7 +9,7 @@ import (
 )
 
 type HttpServer struct {
-	Logger log.Logger
+	Logger logger.Logger
 }
 
 func (s *HttpServer) StartServer(port string, handler http.Handler) *http.Server {
