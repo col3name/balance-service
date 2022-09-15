@@ -9,14 +9,14 @@ import (
 type Service struct {
 	currencySDK domain.CurrencySDK
 	updatedAt   time.Time
-	data        map[domain.Currency]float64
+	currencyMap map[domain.Currency]float64
 	mx          sync.RWMutex
 }
 
 func NewService(sdk domain.CurrencySDK, from domain.Currency) *Service {
 	s := new(Service)
 	s.currencySDK = sdk
-	s.data = make(map[domain.Currency]float64, 2)
+	s.currencyMap = make(map[domain.Currency]float64, 2)
 	err := s.updateCurrencies(from)
 	if err != nil {
 		return nil
@@ -30,38 +30,43 @@ func (s *Service) Translate(amount int64, from domain.Currency, to domain.Curren
 		return nil, err
 	}
 	s.mx.RLock()
-	val, ok := s.data[to]
+	number, ok := s.currencyMap[to]
 	s.mx.RUnlock()
 	if !ok {
 		return nil, domain.ErrFailedConvert
 	}
-	return domain.NewCurrencyReturn(float64(amount)*val, 1/val), nil
+	return domain.NewCurrencyReturn(float64(amount)*number, 1/number), nil
 }
 
 func (s *Service) updateIfNeeded(from domain.Currency) error {
-	if s.isNeedUpdate() {
+	if !s.isNeedUpdate() {
 		return nil
 	}
 	return s.updateCurrencies(from)
 }
 
 func (s *Service) updateCurrencies(from domain.Currency) error {
-	list, err := s.currencySDK.GetCurrenciesList(from)
+	currencyItems, err := s.currencySDK.GetCurrenciesList(from)
 	if err != nil {
 		return err
 	}
 
-	s.mx.Lock()
-	for _, item := range list {
-		s.data[item.Currency] = item.Value
-	}
-
-	s.updatedAt = time.Now()
-	s.mx.Unlock()
+	s.fillCurrencyMap(currencyItems)
 
 	return nil
 }
 
+func (s *Service) fillCurrencyMap(currencyItems []*domain.CurrencyItem) {
+	s.mx.Lock()
+	defer s.mx.Unlock()
+
+	for _, currencyItem := range currencyItems {
+		s.currencyMap[currencyItem.Currency] = currencyItem.Value
+	}
+
+	s.updatedAt = time.Now()
+}
+
 func (s *Service) isNeedUpdate() bool {
-	return time.Since(s.updatedAt).Minutes() >= 10
+	return time.Since(s.updatedAt).Minutes() <= 10
 }

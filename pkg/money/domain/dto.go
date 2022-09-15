@@ -65,6 +65,8 @@ type CurrencyReturn struct {
 	ConversationRate float64
 }
 
+const DefaultConversionRate = 1
+
 func NewCurrencyReturn(amount float64, conversationRate float64) *CurrencyReturn {
 	if amount < 0 || conversationRate <= 0 {
 		return nil
@@ -390,6 +392,19 @@ type MoneyRequest struct {
 	IdempotencyKey string
 	Account        string
 	Description    string
+}
+
+func GetTransactionId(idempotencyKey string) (uuid.UUID, error) {
+	var transactionId uuid.UUID
+	var err error
+	if len(idempotencyKey) == 0 {
+		transactionId, err = uuid.NewV4()
+		if err != nil {
+			return uuid.UUID{}, err
+		}
+		idempotencyKey = transactionId.String()
+	}
+	return uuid.FromString(idempotencyKey)
 }
 
 func NewMoneyRequest(idempotencyKey string, account string, amount int64, description string) *MoneyRequest {

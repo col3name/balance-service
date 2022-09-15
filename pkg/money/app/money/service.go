@@ -22,17 +22,17 @@ func (s Service) GetBalance(dto *domain.GetBalanceDTO) (*domain.CurrencyReturn, 
 	if err != nil {
 		return nil, domain.ErrNotFound
 	}
+	currency := domain.NewCurrencyReturn(float64(amount), domain.DefaultConversionRate)
 	targetCurrency := dto.GetCurrency()
-	result := domain.NewCurrencyReturn(float64(amount), 1)
 	if targetCurrency == domain.RUB {
-		return result, nil
+		return currency, nil
 	}
 
-	result, err = s.currencyService.Translate(amount, domain.RUB, targetCurrency)
+	currency, err = s.currencyService.Translate(amount, domain.RUB, targetCurrency)
 	if err != nil {
 		return nil, domain.ErrFailedConvert
 	}
-	return result, nil
+	return currency, nil
 }
 
 func (s Service) GetTransactionListRequest(dto *domain.GetTransactionListRequest) (*domain.GetTransactionListReturn, error) {
@@ -40,7 +40,7 @@ func (s Service) GetTransactionListRequest(dto *domain.GetTransactionListRequest
 }
 
 func (s Service) TransferMoney(dto *domain.MoneyTransferRequest) (*uuid.UUID, error) {
-	transactionId, err := s.getTransactionId(dto.IdempotencyKey)
+	transactionId, err := domain.GetTransactionId(dto.IdempotencyKey)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (s Service) TransferMoney(dto *domain.MoneyTransferRequest) (*uuid.UUID, er
 }
 
 func (s Service) CreditOrDebitMoney(dto *domain.MoneyRequest) (*uuid.UUID, error) {
-	transactionId, err := s.getTransactionId(dto.IdempotencyKey)
+	transactionId, err := domain.GetTransactionId(dto.IdempotencyKey)
 	if err != nil {
 		return nil, err
 	}
@@ -63,17 +63,4 @@ func (s Service) CreditOrDebitMoney(dto *domain.MoneyRequest) (*uuid.UUID, error
 		return nil, err
 	}
 	return &transactionId, err
-}
-
-func (s Service) getTransactionId(idempotencyKey string) (uuid.UUID, error) {
-	var transactionId uuid.UUID
-	var err error
-	if len(idempotencyKey) == 0 {
-		transactionId, err = uuid.NewV4()
-		if err != nil {
-			return uuid.UUID{}, err
-		}
-		idempotencyKey = transactionId.String()
-	}
-	return uuid.FromString(idempotencyKey)
 }
