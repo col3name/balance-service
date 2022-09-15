@@ -1,7 +1,7 @@
 package domain
 
 import (
-	"github.com/col3name/balance-transfer/pkg/common/infrastructure/util"
+	str "github.com/col3name/balance-transfer/pkg/common/infrastructure/util/strings"
 	"github.com/gofrs/uuid"
 	"math"
 	"strconv"
@@ -183,7 +183,7 @@ type Cursor string
 const CursorValueSeparator = "!"
 
 func NewCursor(time string, page int, isNextDirection bool) Cursor {
-	result := util.B64encode(time + CursorValueSeparator + strconv.Itoa(page) + CursorValueSeparator + strconv.FormatBool(isNextDirection))
+	result := str.B64encode(time + CursorValueSeparator + strconv.Itoa(page) + CursorValueSeparator + strconv.FormatBool(isNextDirection))
 	return Cursor(result)
 }
 
@@ -191,7 +191,7 @@ func (c *Cursor) split() (string, int, bool, error) {
 	if c.Empty() {
 		return "", 0, false, nil
 	}
-	res, err := util.B64decode(string(*c))
+	res, err := str.B64decode(string(*c))
 	if err != nil {
 		return "", 0, false, err
 	}

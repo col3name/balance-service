@@ -9,7 +9,7 @@ import (
 	"github.com/col3name/balance-transfer/pkg/money/domain"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/adapter/freecurrency"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/postgres"
-	"github.com/col3name/balance-transfer/pkg/money/infrastructure/transport/handler"
+	"github.com/col3name/balance-transfer/pkg/money/infrastructure/transport/http/handler"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4/pgxpool"
 	log "github.com/sirupsen/logrus"

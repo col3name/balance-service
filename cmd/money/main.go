@@ -7,7 +7,7 @@ import (
 	"github.com/col3name/balance-transfer/pkg/money/app/log"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/logger"
 	"github.com/col3name/balance-transfer/pkg/money/infrastructure/postgres"
-	"github.com/col3name/balance-transfer/pkg/money/infrastructure/transport/router"
+	"github.com/col3name/balance-transfer/pkg/money/infrastructure/transport/http/router"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"net/http"
 	"time"
@@ -16,8 +16,7 @@ import (
 func main() {
 	loggerImpl := logger.New()
 
-	config.LoadDotEnvFileIfNeeded(loggerImpl)
-	conf, err := config.ParseConfig()
+	conf, err := config.ParseConfig(loggerImpl)
 	if err != nil {
 		loggerImpl.Fatal(err)
 	}
@@ -25,7 +24,7 @@ func main() {
 	if err != nil {
 		loggerImpl.Fatal(err.Error())
 	}
-	handler, err := initHandlers(pool, conf.CurrencyApiKey, 128)
+	handler, err := router.Router(pool, conf.CurrencyApiKey, 128)
 	if err != nil {
 		loggerImpl.Fatal(err.Error())
 	}
@@ -36,10 +35,6 @@ func prepareDbPool(conf *postgres.Config) (*pgxpool.Pool, error) {
 	migration := postgres.NewMigration("", conf.MigrationsPath)
 
 	return postgres.GetReadyConnectionToDB(conf, migration)
-}
-
-func initHandlers(connPool *pgxpool.Pool, currencyApiKey string, countConnection int) (http.Handler, error) {
-	return router.Router(connPool, currencyApiKey, countConnection)
 }
 
 func runHttpServer(loggerImpl log.Logger, conf *postgres.Config, handler http.Handler) {

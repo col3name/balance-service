@@ -1,4 +1,4 @@
-package util
+package strings
 
 import b64 "encoding/base64"
 
