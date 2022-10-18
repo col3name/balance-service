@@ -33,6 +33,8 @@ swagger ui running on ``` localhost:80```
 - Debit or credit of funds from account.
 - Converting balance to other currencies.
 
+## Improvments
+ - Use Credit/Debit transaction account, Transaction(id, account_id uuid, credit int, debit int, desc: string)
 ## Database UML
 
 ![cursor](docs/img/db-uml.png)
