@@ -38,7 +38,7 @@ func prepareDbPool(conf *postgres.Config) (*pgxpool.Pool, error) {
 }
 
 func runHttpServer(loggerImpl commonLogger.Logger, conf *postgres.Config, handler http.Handler) {
-	loggerImpl.Info("Start at" + time.Now().String())
+	loggerImpl.Info("Start at" + time.Now().String() + " :" + conf.Port)
 	defer loggerImpl.Info("Stop at" + time.Now().String())
 
 	httpServer := server.HttpServer{Logger: loggerImpl}
