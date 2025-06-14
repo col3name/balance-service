@@ -3,6 +3,8 @@ info:
   version: 1.0.0
   title: Money money
   description: Microservice for working with users' balance (crediting funds, debiting funds, transferring funds from user to user, as well as a method for obtaining a user's balance, a list of transactions).
+servers:
+  - url: http://localhost:8000
 paths:
   /api/v1/money/{accountId}:
     get:
