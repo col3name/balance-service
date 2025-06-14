@@ -1,0 +1,19 @@
+{
+  "name": "balance-service",
+  "version": "1.0.0",
+  "description": "![Ci passing](https://github.com/col3name/balance-service/actions/workflows/prod.yml/badge.svg) ![Coverage](https://img.shields.io/badge/Coverage-0.0%25-red)",
+  "main": "bench.js",
+  "directories": {
+    "doc": "../docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "guid": "^0.0.12",
+    "k6": "^0.0.0",
+    "uuid": "^11.1.0"
+  }
+}
