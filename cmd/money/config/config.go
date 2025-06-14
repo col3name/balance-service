@@ -10,15 +10,15 @@ func ParseConfig(logger logger.Logger) (*postgres.Config, error) {
 	env.LoadDotEnvFileIfNeeded(logger)
 
 	var err error
-	serveRestAddress, err := env.ParseEnvString("PORT", err)
-	dbAddress, err := env.ParseEnvString("DATABASE_ADDRESS", err)
-	dbName, err := env.ParseEnvString("DATABASE_NAME", err)
-	dbUser, err := env.ParseEnvString("DATABASE_USER", err)
-	dbPassword, err := env.ParseEnvString("DATABASE_PASSWORD", err)
-	maxConnections, err := env.ParseEnvInt("DATABASE_MAX_CONNECTION", err)
-	acquireTimeout, err := env.ParseEnvInt("DATABASE_CONNECTION_TIMEOUT", err)
-	currencyApiKey, err := env.ParseEnvString("CURRENCY_API_KEY", err)
-	migrationsPath, err := env.ParseEnvString("MIGRATION_PATH", err)
+	serveRestAddress, err := env.ParseEnvString("PORT", err, "8000")
+	dbAddress, err := env.ParseEnvString("DATABASE_ADDRESS", err, "localhost:5432")
+	dbName, err := env.ParseEnvString("DATABASE_NAME", err, "payment")
+	dbUser, err := env.ParseEnvString("DATABASE_USER", err, "payment")
+	dbPassword, err := env.ParseEnvString("DATABASE_PASSWORD", err, "1234")
+	maxConnections, err := env.ParseEnvInt("DATABASE_MAX_CONNECTION", err, 64)
+	acquireTimeout, err := env.ParseEnvInt("DATABASE_CONNECTION_TIMEOUT", err, 500)
+	currencyApiKey, err := env.ParseEnvString("CURRENCY_API_KEY", err, "89103730-9489-11ec-bd80-b16cd9bfc243")
+	migrationsPath, err := env.ParseEnvString("MIGRATION_PATH", err, "./data/postgres/migrations/money")
 
 	if err != nil {
 		return nil, err
