@@ -1,4 +1,4 @@
-.PHONY: clean test lint
+.PHONY: clean test lint bench
 
 all: clean bin/money test lint check-arch
 
@@ -47,3 +47,6 @@ newman:
 	newman run moneyservice.postman_collection.json
 
 verify: build lint test check-arch
+
+bench:
+	k6 run ./bench/script.js

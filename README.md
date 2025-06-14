@@ -15,16 +15,28 @@
 [newman](https://www.npmjs.com/package/newman),
 [go-cleanarch](https://github.com/roblaszczak/go-cleanarch)
 
-setup data
+k6 ```brew instal k6```
+
+
+### Initialize database
 create table from file ```data\postgres\migrations\init.sql```
+
 insert data from file ```data\postgres\migrations\payment_public_account.sql```
+
+### Start  app
 ```shell
 make bin/money
 make up
 ```
 
-server running on ```localhost:8000```
-swagger ui running on ``` localhost:80```
+### Benchmark for read transactions 
+```shell
+make bench
+```
+
+server running on [localhost:8000](http://localhost:8000) ```http://localhost:8000```
+
+swagger ui running on [localhost:80](http://localhost:80) ```http://localhost:80```
 
 ## Use cases 
 - Get the user's current balance.
